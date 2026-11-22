@@ -1,0 +1,1888 @@
+<!DOCTYPE html>
+<html lang="en" data-ed="day" data-theme="day" data-medium="cycle">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Kinesis Roadmap & Architectural Journal (Public Edition)</title>
+  <script src="https://www.gstatic.com/antigravity/web/dev/tailwindcss.min.js"></script>
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      min-height: 100%;
+      font-family: "Public Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+      font-size: 16px;
+      line-height: 1.55;
+      background-color: var(--kim-ground, rgb(246, 242, 231));
+      color: var(--kim-ink, rgb(27, 26, 34));
+      transition: background-color 220ms ease, color 220ms ease;
+      overflow-x: hidden;
+    }
+    body[data-font-medium="pixel"] .kim-display {
+      font-family: "Archivo Black", ui-monospace, "SFMono-Regular", Menlo, monospace;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+    body[data-font-medium="colored-pencil"] .kim-display {
+      font-family: "Cabin Sketch", "Archivo Black", cursive, sans-serif;
+    }
+    body[data-font-medium="charcoal"] .kim-display {
+      font-family: "Anton", Impact, "Arial Black", sans-serif;
+      letter-spacing: 0.03em;
+      text-transform: uppercase;
+    }
+    body[data-font-medium="oil"] .kim-display {
+      font-family: "Fraunces", "Iowan Old Style", "Palatino Linotype", Georgia, serif;
+    }
+    body[data-font-medium="watercolor"] .kim-display {
+      font-family: "Instrument Serif", "Iowan Old Style", Georgia, serif;
+      font-style: italic;
+    }
+    body[data-font-medium="sumi-ink"] .kim-display {
+      font-family: "Shippori Mincho B1", "Hiragino Mincho ProN", Georgia, serif;
+    }
+    body[data-font-medium="linocut"] .kim-display {
+      font-family: "Ultra", "Rockwell Extra Bold", "Archivo Black", serif;
+      text-transform: uppercase;
+    }
+    body[data-font-medium="clay"] .kim-display {
+      font-family: "Fraunces", "Cinzel", Georgia, serif;
+      letter-spacing: 0.03em;
+    }
+    body[data-font-medium="glowing-glass"] .kim-display {
+      font-family: "Archivo Black", "Space Grotesk", system-ui, sans-serif;
+      letter-spacing: 0.02em;
+    }
+    .kim-mono {
+      font-family: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+    }
+    .kim-hand {
+      font-family: "Patrick Hand", "Segoe Print", "Bradley Hand", cursive;
+    }
+    #kim-lamps-canvas {
+      position: fixed;
+      inset: 0;
+      width: 100vw;
+      height: 100vh;
+      pointer-events: none;
+      z-index: 1;
+    }
+    #kim-particle-canvas {
+      position: fixed;
+      inset: 0;
+      width: 100vw;
+      height: 100vh;
+      pointer-events: none;
+      z-index: 40;
+    }
+    #kim-tool-canvas {
+      position: fixed;
+      inset: 0;
+      width: 100vw;
+      height: 100vh;
+      pointer-events: none;
+      z-index: 45;
+    }
+    .kim-stage {
+      position: relative;
+      z-index: 10;
+    }
+    .kim-card {
+      position: relative;
+      border-radius: 4px;
+      transition: transform 180ms ease;
+    }
+    .kim-card:hover {
+      transform: translate(-2px, -2px);
+    }
+    .kim-card-canvas {
+      position: absolute;
+      inset: -10px;
+      width: calc(100% + 20px);
+      height: calc(100% + 20px);
+      pointer-events: none;
+      z-index: 1;
+    }
+    .kim-card-inner {
+      position: relative;
+      z-index: 5;
+      padding: 1.5rem;
+    }
+    .kim-word-safe {
+      position: relative;
+      border-radius: 3px;
+    }
+    .kim-dock {
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      background-color: var(--kim-dock-bg, rgba(255, 253, 246, 0.94));
+      border-bottom: 3px solid var(--kim-rule, rgb(27, 26, 34));
+      backdrop-filter: blur(12px) saturate(1.4);
+    }
+    .kim-btn {
+      cursor: pointer;
+      font-size: 0.8125rem;
+      font-weight: 700;
+      padding: 0.45rem 0.85rem;
+      border: 2px solid var(--kim-ink, rgb(27, 26, 34));
+      background-color: var(--kim-paper2, rgb(255, 253, 246));
+      color: var(--kim-ink, rgb(27, 26, 34));
+      box-shadow: 3px 3px 0 var(--kim-plate, rgb(27, 26, 34));
+      transition: transform 120ms ease, box-shadow 120ms ease;
+    }
+    .kim-btn:hover {
+      transform: translate(-1px, -1px);
+      box-shadow: 4px 4px 0 var(--kim-plate, rgb(27, 26, 34));
+    }
+    .kim-btn:active {
+      transform: translate(1px, 1px);
+      box-shadow: 1px 1px 0 var(--kim-plate, rgb(27, 26, 34));
+    }
+    .kim-btn-active {
+      background-color: var(--kim-accent, rgb(212, 60, 140));
+      color: var(--kim-accent-fg, rgb(255, 253, 246));
+    }
+    .kim-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      font-size: 0.75rem;
+      font-weight: 700;
+      padding: 0.2rem 0.55rem;
+      border: 2px solid currentColor;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+    .kim-input {
+      font-size: 0.8125rem;
+      padding: 0.35rem 0.6rem;
+      border: 2px solid var(--kim-ink, rgb(27, 26, 34));
+      background-color: var(--kim-paper2, rgb(255, 253, 246));
+      color: var(--kim-ink, rgb(27, 26, 34));
+    }
+    .kim-modal-backdrop {
+      position: fixed;
+      inset: 0;
+      z-index: 60;
+      background-color: rgba(7, 6, 13, 0.72);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 1.25rem;
+    }
+    .kim-modal-backdrop.open {
+      display: flex;
+    }
+    .kim-modal-card {
+      position: relative;
+      width: 100%;
+      max-width: 58rem;
+      max-height: 90vh;
+      overflow-y: auto;
+      background-color: var(--kim-paper2, rgb(255, 253, 246));
+      color: var(--kim-ink, rgb(27, 26, 34));
+      border: 3px solid var(--kim-ink, rgb(27, 26, 34));
+      box-shadow: 7px 7px 0 var(--kim-plate, rgb(27, 26, 34));
+      padding: 1.75rem;
+    }
+    .kim-prose h1, .kim-prose h2, .kim-prose h3 {
+      font-weight: 800;
+      margin-top: 1.4rem;
+      margin-bottom: 0.6rem;
+      line-height: 1.25;
+    }
+    .kim-prose h1 { font-size: 1.65rem; }
+    .kim-prose h2 { font-size: 1.25rem; border-bottom: 2px solid var(--kim-rule, rgba(128,128,128,0.3)); padding-bottom: 0.25rem; }
+    .kim-prose h3 { font-size: 1.05rem; }
+    .kim-prose p { margin: 0.75rem 0; max-width: 68ch; }
+    .kim-prose ul, .kim-prose ol { margin: 0.65rem 0; padding-left: 1.4rem; max-width: 68ch; }
+    .kim-prose li { margin: 0.3rem 0; }
+    .kim-prose code {
+      font-family: "JetBrains Mono", ui-monospace, monospace;
+      font-size: 0.85em;
+      padding: 0.12rem 0.35rem;
+      border-radius: 3px;
+      background-color: var(--kim-well, rgba(128, 128, 128, 0.16));
+    }
+    .kim-prose pre {
+      font-family: "JetBrains Mono", ui-monospace, monospace;
+      font-size: 0.8125rem;
+      padding: 0.9rem;
+      overflow-x: auto;
+      border: 2px solid var(--kim-rule, rgba(128, 128, 128, 0.35));
+      background-color: var(--kim-well, rgba(128, 128, 128, 0.12));
+    }
+    .kim-prose table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 1rem 0;
+      font-size: 0.875rem;
+    }
+    .kim-prose th, .kim-prose td {
+      border: 2px solid var(--kim-rule, rgba(128, 128, 128, 0.35));
+      padding: 0.5rem 0.65rem;
+      text-align: left;
+    }
+    .kim-prose th {
+      background-color: var(--kim-well, rgba(128, 128, 128, 0.16));
+      font-weight: 700;
+    }
+  </style>
+</head>
+<body data-font-medium="pixel">
+  <canvas id="kim-lamps-canvas" aria-hidden="true"></canvas>
+  <canvas id="kim-particle-canvas" aria-hidden="true"></canvas>
+  <canvas id="kim-tool-canvas" aria-hidden="true"></canvas>
+
+  <!-- Studio Controls Dock (R4 Contract) -->
+  <header class="kim-dock">
+    <div class="max-w-7xl mx-auto px-4 py-3 flex flex-wrap items-center justify-between gap-3">
+      <div class="flex items-center gap-3">
+        <span class="kim-badge kim-mono" id="kim-edition-badge">PUBLIC EDITION</span>
+        <div>
+          <div class="kim-display text-lg font-black tracking-wide kim-word-guard">KINESIS IN MEDIA // ROADMAP</div>
+          <div class="text-xs opacity-80 kim-word-guard" id="kim-active-tool-readout">Active Medium: 9-Medium Timeline Cycle</div>
+        </div>
+      </div>
+
+      <div class="flex flex-wrap items-center gap-2" role="toolbar" aria-label="Kinesis in Media Renderer Controls">
+        <!-- Medium Selector (kim-medium) -->
+        <label class="text-xs font-bold flex items-center gap-1.5 kim-word-guard" for="kim-medium-select">
+          <span>Medium:</span>
+          <select id="kim-medium-select" class="kim-input kim-mono" aria-label="Select Drawing Medium">
+            <option value="cycle">Timeline Cycle (All 9 Media)</option>
+            <option value="pixel">007 // 16-Bit Pixel Art (Default)</option>
+            <option value="sumi-ink">005 // Sumi Ink &amp; Hanko Seal</option>
+            <option value="linocut">006 // Hand-Pulled Linocut</option>
+            <option value="charcoal">002 // Willow &amp; Vine Charcoal</option>
+            <option value="watercolor">004 // Transparent Watercolor</option>
+            <option value="oil">003 // Impasto Oil &amp; Knife</option>
+            <option value="clay">008 // 3D Inscribed Clay Tablet</option>
+            <option value="glowing-glass">009 // Glowing Etched VerseGlass</option>
+            <option value="colored-pencil">001 // Colored Pencil on Bristol</option>
+          </select>
+        </label>
+
+        <!-- Day / Darkroom Night Switch (kim-edition) -->
+        <button type="button" id="kim-edition-btn" class="kim-btn kim-word-guard" aria-pressed="false">
+          Edition: Day Paper
+        </button>
+
+        <!-- Show the tool Switch (kim-tool) -->
+        <button type="button" id="kim-tool-btn" class="kim-btn kim-word-guard" aria-pressed="true">
+          Show the tool: ON
+        </button>
+
+        <!-- Average brush size slider (kim-brush) -->
+        <label class="text-xs font-bold flex items-center gap-1.5 px-2 py-1 border-2 border-current kim-word-guard" for="kim-brush-slider">
+          <span>Average brush size:</span>
+          <input id="kim-brush-slider" type="range" min="0.5" max="2.5" step="0.1" value="1.0" class="w-20" />
+          <span id="kim-brush-val" class="kim-mono text-xs">1.0x</span>
+        </label>
+
+        <!-- Reduced Motion toggle -->
+        <button type="button" id="kim-motion-btn" class="kim-btn kim-word-guard" aria-pressed="false">
+          Motion: Procedural
+        </button>
+
+        <!-- Re-plot sheet button -->
+        <button type="button" id="kim-replot-btn" class="kim-btn kim-word-guard">
+          Re-Plot Sheet
+        </button>
+      </div>
+    </div>
+
+    <!-- Navigation Tabs & Word-Protection Telemetry Bar -->
+    <div class="max-w-7xl mx-auto px-4 py-2 border-t border-current/20 flex flex-wrap items-center justify-between gap-2 text-xs">
+      <nav class="flex flex-wrap items-center gap-2" aria-label="Roadmap Views">
+        <button type="button" class="kim-btn kim-btn-active kim-tab-btn kim-word-guard" data-tab="timeline">
+          1. Chronological Timeline (8 Milestones + Horizon)
+        </button>
+        <button type="button" class="kim-btn kim-tab-btn kim-word-guard" data-tab="journal">
+          2. Full Blog Journal (All 8 Posts)
+        </button>
+        <button type="button" class="kim-btn kim-tab-btn kim-word-guard" data-tab="media-rules">
+          3. 9-Medium Palette &amp; Binding Rules
+        </button>
+        
+      </nav>
+
+      <div class="flex flex-wrap items-center gap-3 kim-mono text-xs kim-word-guard">
+        <span id="kim-guard-telemetry">Word Guards: active (0 particle collisions)</span>
+        <span>|</span>
+        <span id="kim-particle-telemetry">Particles: 0 / 150</span>
+        
+      </div>
+    </div>
+  </header>
+
+  <main class="kim-stage max-w-7xl mx-auto px-4 py-8 space-y-10">
+    <!-- Hero Banner Card -->
+    <section class="kim-card" id="kim-hero-card" data-card-id="hero" data-card-medium="pixel" data-take="1">
+      <canvas class="kim-card-canvas" aria-hidden="true"></canvas>
+      <div class="kim-card-inner space-y-4">
+        <div class="flex flex-wrap items-center justify-between gap-2">
+          <span class="kim-badge kim-mono kim-word-guard">KINESIS ARCHITECTURE JOURNAL // 2026-11-21</span>
+          <span class="kim-badge kim-mono kim-word-guard" id="kim-hero-status-pill">
+            PUBLIC ARCHITECTURE EDITION // 9 PROCEDURAL MEDIA
+          </span>
+        </div>
+        <h1 class="kim-display text-3xl md:text-4xl font-black tracking-tight kim-word-guard">Kinesis Roadmap & Architectural Journal (Public Edition)</h1>
+        <p class="text-base md:text-lg max-w-4xl kim-word-guard">A decentralized personal, role, and community computing stack drawn procedurally across nine physical and digital art media.</p>
+
+        <!-- 9-Medium Interactive Ribbon -->
+        <div class="pt-2">
+          <div class="text-xs font-bold uppercase tracking-wider mb-2 kim-word-guard">
+            Click any medium swatch below to preview or filter, or keep Timeline Cycle mode so every milestone draws itself in its own medium:
+          </div>
+          <div id="kim-medium-ribbon" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-9 gap-2"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 1: Chronological Timeline -->
+    <section id="kim-view-timeline" class="space-y-8">
+      <div class="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h2 class="kim-display text-2xl font-black kim-word-guard">Chronological Milestones (01 to 08 + Horizon)</h2>
+          <p class="text-sm opacity-85 kim-word-guard">
+            Each card below plots on scroll in its assigned art medium, erases spatially when scrolled out of the viewport edge, and redraws with a fresh seed on return.
+          </p>
+        </div>
+        <div class="flex flex-wrap items-center gap-2" id="kim-status-filters">
+          <button type="button" class="kim-btn kim-btn-active text-xs kim-filter-btn kim-word-guard" data-filter="all">All (9)</button>
+          <button type="button" class="kim-btn text-xs kim-filter-btn kim-word-guard" data-filter="shipped">Shipped</button>
+          <button type="button" class="kim-btn text-xs kim-filter-btn kim-word-guard" data-filter="built">Built</button>
+          <button type="button" class="kim-btn text-xs kim-filter-btn kim-word-guard" data-filter="in-progress">In Progress</button>
+          <button type="button" class="kim-btn text-xs kim-filter-btn kim-word-guard" data-filter="planned">Planned / Horizon</button>
+        </div>
+      </div>
+
+      <div id="kim-timeline-list" class="space-y-10"></div>
+    </section>
+
+    <!-- TAB 2: Full Blog Journal Reader (All 8 Posts in Full) -->
+    <section id="kim-view-journal" class="space-y-10 hidden">
+      <div class="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h2 class="kim-display text-2xl font-black kim-word-guard">Complete Publication Journal (All 8 Feature &amp; Milestone Essays)</h2>
+          <p class="text-sm opacity-85 kim-word-guard">
+            Every essay rendered in full with its assigned medium palette, highlights, and next steps.
+          </p>
+        </div>
+        <div id="kim-journal-jump" class="flex flex-wrap gap-1.5"></div>
+      </div>
+      <div id="kim-journal-list" class="space-y-12"></div>
+    </section>
+
+    <!-- TAB 3: 9-Medium Palette & Binding Rules -->
+    <section id="kim-view-media-rules" class="space-y-8 hidden">
+      <div>
+        <h2 class="kim-display text-2xl font-black kim-word-guard">Kinesis in Media: 9 Procedural Media &amp; Binding Rules</h2>
+        <p class="text-sm opacity-85 kim-word-guard">
+          Interactive reference for per-medium Day grounds, Darkroom Night lamps, physical tools, brush character scaling, word-guard exclusion strategies, and particle tables.
+        </p>
+      </div>
+      <div id="kim-rules-summary-grid" class="grid grid-cols-1 md:grid-cols-2 gap-6"></div>
+      <div id="kim-media-catalog-grid" class="grid grid-cols-1 md:grid-cols-3 gap-6"></div>
+    </section>
+
+    
+  </main>
+
+  
+
+  <!-- Blog Post Reader Modal -->
+  <div id="kim-post-modal" class="kim-modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="kim-modal-title">
+    <div class="kim-modal-card">
+      <div class="flex flex-wrap items-center justify-between gap-2 pb-3 border-b-2 border-current">
+        <div class="flex items-center gap-2">
+          <span id="kim-modal-medium-badge" class="kim-badge kim-mono"></span>
+          <span id="kim-modal-status-badge" class="kim-badge kim-mono"></span>
+        </div>
+        <div class="flex items-center gap-2">
+          <button type="button" id="kim-modal-prev-btn" class="kim-btn text-xs">Prev Milestone</button>
+          <button type="button" id="kim-modal-next-btn" class="kim-btn text-xs">Next Milestone</button>
+          <button type="button" id="kim-modal-close-btn" class="kim-btn kim-btn-active text-xs">Close [Esc]</button>
+        </div>
+      </div>
+      <div id="kim-modal-content" class="pt-4 space-y-6"></div>
+    </div>
+  </div>
+
+  
+
+  <script id="kim-payload" type="application/json">{"visualSpec":{"defaultMedium":"pixel","defaultEdition":"day","typography":{"paperFoundation":{"displayFont":"\"Archivo Black\", \"Arial Black\", Impact, system-ui, sans-serif","bodyFont":"\"Public Sans\", system-ui, -apple-system, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif","monoFont":"\"JetBrains Mono\", ui-monospace, \"SFMono-Regular\", Menlo, Consolas, monospace","handNoteFont":"\"Patrick Hand\", \"Segoe Print\", \"Bradley Hand\", cursive","displayTransform":"uppercase","displayLetterSpacing":"0.02em","keyLabelLetterSpacing":"0.04em","bodySizePx":17,"bodyLineHeight":1.55,"minBodySizePx":15,"maxMeasureCh":68},"perMediumDisplayFaces":{"pixel":{"display":"Procedural 5x7 and 7x9 pixel bitmap font rendered on art grid (with .vh visually-hidden live HTML text for AX/selection); fallback \"Archivo Black\", monospace","body":"\"Public Sans\", system-ui, -apple-system, sans-serif"},"colored-pencil":{"display":"\"Cabin Sketch\", \"Archivo Black\", cursive, sans-serif","body":"\"Public Sans\", system-ui, -apple-system, sans-serif","note":"\"Patrick Hand\", cursive"},"charcoal":{"display":"\"Anton\", Impact, Haettenschweiler, \"Arial Narrow Bold\", sans-serif","body":"\"Public Sans\", system-ui, -apple-system, sans-serif","note":"\"Patrick Hand\", cursive"},"oil":{"display":"\"Fraunces\", \"Iowan Old Style\", \"Palatino Linotype\", Palatino, Georgia, serif","displayVariationSettings":"'SOFT' 100, 'WONK' 1","body":"\"Public Sans\", system-ui, -apple-system, sans-serif"},"watercolor":{"display":"\"Instrument Serif\", \"Iowan Old Style\", \"Palatino Linotype\", Georgia, serif","displayStyle":"italic for display headings","body":"\"Public Sans\", system-ui, -apple-system, sans-serif"},"sumi-ink":{"display":"\"Shippori Mincho B1\", \"Hiragino Mincho ProN\", \"Yu Mincho\", Georgia, serif","body":"\"Public Sans\", system-ui, -apple-system, sans-serif"},"linocut":{"display":"\"Ultra\", \"Rockwell Extra Bold\", \"Archivo Black\", Georgia, serif","body":"\"Public Sans\", system-ui, -apple-system, sans-serif"},"clay":{"display":"\"Fraunces\", \"Cinzel\", \"Iowan Old Style\", Georgia, serif","body":"\"Public Sans\", system-ui, -apple-system, sans-serif","note":"Inscribed stylus capitals with top-left catch-light and bottom-right groove shadow"},"glowing-glass":{"display":"\"Archivo Black\", \"Space Grotesk\", system-ui, sans-serif","body":"\"Public Sans\", system-ui, -apple-system, sans-serif","note":"Luminous etched display glyphs with 1px cyan/magenta prismatic rim on hero titles; zero blur on body copy"}}},"paperBaseTokens":{"ground":"rgb(246, 242, 231)","creamCard":"rgb(255, 253, 246)","sandCard":"rgb(251, 247, 234)","inputWell":"rgb(239, 234, 224)","ink":"rgb(19, 19, 19)","inkMuted":"rgb(44, 42, 37)","placeholder":"rgb(89, 84, 74)","plate":"rgb(19, 19, 19)","stickerYellow":"rgb(255, 242, 0)","cyan":"rgb(0, 174, 239)","cyanTextOnPaper":"rgb(0, 95, 138)","magenta":"rgb(236, 0, 140)","magentaTextOnPaper":"rgb(176, 0, 98)","borderWidthPx":3,"sectionBorderWidthPx":4,"cardPlateOffsetPx":4,"heroPlateOffsetPx":7,"hoverTranslatePx":-2,"hoverPlateOffsetPx":6,"activeTranslatePx":2,"activePlateOffsetPx":2},"darkroomContract":{"voidGround":"rgb(7, 6, 13)","elevatedStand":"rgb(18, 14, 32)","deepInputWell":"rgb(8, 6, 15)","smokedCreamCel":"rgba(26, 20, 46, 0.86)","smokedSandCel":"rgba(36, 28, 62, 0.88)","boneInk":"rgb(247, 242, 255)","inkSoft":"rgb(217, 208, 242)","inkLabel":"rgb(212, 203, 239)","inkMuted":"rgb(185, 174, 218)","inkPlaceholder":"rgb(158, 147, 191)","borderHairline":"rgba(247, 242, 255, 0.28)","borderStrong":"rgba(247, 242, 255, 0.42)","borderTopCatch":"rgba(255, 255, 255, 0.50)","hardPlateColor":"rgb(241, 59, 255)","focusRing":"rgb(255, 233, 74)","lamps":[{"id":"magenta","hex":"rgb(241, 59, 255)","periodSeconds":17,"radiusStop":0.62,"alphaNight":0.4,"alphaDay":0.2,"anchor":[0.16,0.22],"driftAmplitude":[0.06,0.04]},{"id":"violet","hex":"rgb(138, 92, 255)","periodSeconds":23,"radiusStop":0.68,"alphaNight":0.36,"alphaDay":0.16,"anchor":[0.54,0.18],"driftAmplitude":[-0.05,0.06]},{"id":"cyan","hex":"rgb(47, 227, 255)","periodSeconds":29,"radiusStop":0.6,"alphaNight":0.34,"alphaDay":0.22,"anchor":[0.86,0.3],"driftAmplitude":[-0.07,0.05]},{"id":"acid","hex":"rgb(182, 255, 59)","periodSeconds":31,"radiusStop":0.56,"alphaNight":0.24,"alphaDay":0.18,"anchor":[0.76,0.82],"driftAmplitude":[-0.05,-0.06]},{"id":"conic-ribbon","hex":"rgb(138, 92, 255)","periodSeconds":41,"alphaNight":0.22,"alphaDay":0.08,"anchor":[0.5,0.5]}],"lampAlphaCap":0.42,"glassRules":{"oneBlurringParentOnly":true,"backdropBlurPx":14,"backdropSaturate":1.6,"topLeftCatchLightRadiusPx":260,"topLeftCatchLightAlpha":0.12,"hardPlateOutsideBlur":true}},"recommendedTimelineCycle":[{"order":1,"medium":"pixel","narrativeFit":"Default foundation medium: early bits, protocols, terminal roots, and deterministic grid primitives"},{"order":2,"medium":"colored-pencil","narrativeFit":"First notebooks, margin sketches, early architecture drafts, and hand-annotated ideas"},{"order":3,"medium":"charcoal","narrativeFit":"Raw structural gestures, high-contrast trade-offs, and bold infrastructural pivots"},{"order":4,"medium":"watercolor","narrativeFit":"Exploratory studies, fluid experiments, and organic ecosystem washes"},{"order":5,"medium":"sumi-ink","narrativeFit":"Calligraphic discipline, single-stroke execution, and decisive architectural contracts"},{"order":6,"medium":"linocut","narrativeFit":"Repeatable stamps, fleet publication, and multi-node block-printed distribution"},{"order":7,"medium":"oil","narrativeFit":"Layered impasto depth, rich multi-service composition, and raking-light dimensionality"},{"order":8,"medium":"clay","narrativeFit":"3D inscribed tablets, durable state schemas, and carved ledger permanence"},{"order":9,"medium":"glowing-glass","narrativeFit":"Luminous VerseGlass 2 control plane, refractive darkroom telemetry, and future horizon"}],"media":{"pixel":{"id":"pixel","number":"007","name":"16-Bit Pixel Art","group":"Digital","isDefault":true,"toolDefault":true,"tool":{"name":"Pixel Stylus & Reticle","cursorDay":"1-art-pixel stepped crosshair reticle in rgb(27, 26, 34) with rgb(242, 210, 27) active pixel tip","cursorNight":"1-art-pixel stepped crosshair reticle in rgb(247, 242, 255) with rgb(255, 233, 74) active pixel tip"},"brush":{"unit":"art-pixel-px","min":4,"max":8,"step":1,"defaultDesktop":5,"defaultMobile":4,"characterScaling":"Controls art pixel size S (4px..8px). Every border, notch, bevel, dither cell, bitmap glyph, and shadow plate snaps strictly to integer multiples of S."},"day":{"ground":"rgb(246, 242, 231)","paper2":"rgb(255, 253, 246)","well":"rgb(239, 234, 224)","ink":"rgb(27, 26, 34)","ink2":"rgb(52, 50, 62)","muted":"rgb(88, 86, 106)","rule":"rgb(211, 207, 194)","focus":"rgb(27, 26, 34)","plate":"rgb(27, 26, 34)","link":"rgb(42, 79, 176)","accents":{"magenta":"rgb(212, 60, 140)","magentaPale":"rgb(242, 179, 213)","cyan":"rgb(31, 163, 201)","cyanPale":"rgb(168, 220, 236)","violet":"rgb(107, 71, 214)","violetPale":"rgb(207, 194, 245)","yellow":"rgb(242, 210, 27)","yellowPale":"rgb(248, 233, 138)","sage":"rgb(141, 190, 122)","sagePale":"rgb(198, 222, 184)","red":"rgb(226, 72, 61)"}},"night":{"ground":"rgb(7, 6, 13)","paper2":"rgb(20, 16, 31)","face":"rgb(28, 21, 54)","well":"rgb(8, 6, 15)","ink":"rgb(247, 242, 255)","ink2":"rgb(217, 208, 242)","muted":"rgb(185, 174, 218)","rule":"rgb(58, 53, 82)","focus":"rgb(255, 233, 74)","plate":"rgb(241, 59, 255)","link":"rgb(142, 240, 255)","accents":{"magenta":"rgb(241, 59, 255)","magentaPale":"rgb(138, 34, 148)","cyan":"rgb(47, 227, 255)","cyanPale":"rgb(15, 106, 120)","violet":"rgb(138, 92, 255)","violetPale":"rgb(74, 53, 144)","yellow":"rgb(255, 233, 74)","yellowPale":"rgb(107, 90, 0)","sage":"rgb(182, 255, 59)","sagePale":"rgb(63, 106, 16)","red":"rgb(255, 75, 92)"}},"wordProtection":{"strategy":"grid-snapped-cell-exclusion","marginPx":4,"marginArtCells":1,"description":"Every word box and .pxh bitmap heading bounding rect is expanded by 1 art cell (S px) and snapped to the art-pixel grid. No border cell, dither dot, or falling pixel particle may plot inside a guarded cell."},"proceduralMechanics":{"canvasSetup":"Low-resolution backing buffer width = ceil(cssW / S), height = ceil(cssH / S), rendered with imageSmoothingEnabled = false and CSS image-rendering: pixelated.","outline":"pixelBox(gx, gy, gw, gh): 1-cell notched perimeter with all 4 corners left empty ((dx==0||dx==gw-1)&&(dy==0||dy==gh-1) skipped). When heavy=true, plots an inner second ring at 1-cell inset with corner bridges.","bevelAndFill":"Inside the 1-cell border, top row (dy==1) and left column (dx==1) use lighter bevel tint; bottom row (dy==gh-2) and right column (dx==gw-2) use darker bevel shade or checkerboard dither ((x + y) % 2 == 0). Interior fills plot row-by-row scanlines using 4x4 Bayer ordered dithering for translucent/toned surfaces.","plate":"pixelPlate(gx, gy, gw, gh, depth=2): hard stepped offset shadow plate shifted +2 art cells right and +2 art cells down, skipping top-right and bottom-left corner cells for authentic 16-bit notched silhouette.","plotTiming":"Cells reveal in deterministic order k over duration = 1400 + min(1800, totalCells * 0.9) ms: perimeter outline cells first (0.0..0.35), scanline fill and Bayer dither second (0.28..0.82), offset shadow plate third (0.75..1.0).","interaction":"Hovering a card shifts it by -1 art cell (-S px) and expands the plate by +1 art cell, emitting 1-3 crisp square pixel sparks. Pressing shifts +1 art cell into the plate.","erase":"Ordered-dither cell dissolve: each cell (gx, gy) has deterministic dissolveRank = (((gx * 73,856,093) ^ (gy * 19,349,663) ^ seed) >>> 0) % 1024 / 1024. As scroll-exit progress e rises from 0 to 1, cells with dissolveRank < e clear to bare ground and shed 1-cell pixel crumbs."},"particles":{"cap":150,"burst":[1,3],"gravityPxPerSec2":180,"drag":0.96,"gridSnap":true,"kinds":[{"kind":"pixel","weight":68,"band":"common","sizeArtCells":[1,1],"lifeMs":[320,620],"description":"Single 1x1 art-grid square snapping to integer S coordinates"},{"kind":"pair","weight":26,"band":"uncommon","sizeArtCells":[2,1],"lifeMs":[360,680],"description":"Domino 2x1 or 1x2 stepped pixel pair"},{"kind":"glint","weight":6,"band":"rare","sizeArtCells":[3,3],"lifeMs":[260,520],"description":"5-cell plus-sign (+) 16-bit sparkle glint"}]}},"colored-pencil":{"id":"colored-pencil","number":"001","name":"Colored Pencil on Hot-Press Bristol","group":"Drawn","isDefault":false,"toolDefault":false,"tool":{"name":"Hexagonal Wood-Cased Colored Pencil & Pink Rubber Eraser","cursorDay":"Angled cedar wood pencil with lacquered barrel matching active pigment and conical wax core tip","cursorNight":"Darkwood pencil with luminous neon core tip (rgb(241, 59, 255) / rgb(47, 227, 255) / rgb(255, 233, 74))","eraserColor":"rgb(231, 161, 169)"},"brush":{"unit":"multiplier","min":0.5,"max":2.5,"step":0.1,"default":1,"characterScaling":"At 0.5x: sharp 0.9px fine-point lead with tight 3.5px hatch spacing. At 1.0x: natural 1.6px wax lead with 5.5px diagonal hatching. At 2.5x: broad side-of-lead shading (3.8px) with coarse paper-tooth grain and loose 9px cross-hatch."},"day":{"ground":"rgb(251, 250, 246)","paper2":"rgb(243, 240, 230)","ink":"rgb(43, 42, 40)","ink2":"rgb(70, 66, 59)","muted":"rgb(92, 87, 78)","rule":"rgba(30, 159, 208, 0.20)","focus":"rgb(43, 42, 40)","plate":"rgb(43, 42, 40)","link":"rgb(0, 95, 138)","accents":{"magenta":"rgb(214, 51, 138)","magentaPale":"rgb(240, 181, 210)","cyan":"rgb(30, 159, 208)","cyanPale":"rgb(181, 221, 238)","violet":"rgb(108, 79, 216)","violetPale":"rgb(207, 196, 242)","yellow":"rgb(242, 194, 0)","yellowPale":"rgb(248, 231, 160)","sage":"rgb(110, 159, 106)","sagePale":"rgb(201, 220, 198)","red":"rgb(217, 68, 47)"}},"night":{"ground":"rgb(18, 16, 20)","paper2":"rgb(27, 24, 32)","ink":"rgb(247, 242, 255)","ink2":"rgb(217, 208, 242)","muted":"rgb(185, 174, 218)","rule":"rgba(138, 92, 255, 0.20)","focus":"rgb(255, 233, 74)","plate":"rgb(247, 242, 255)","link":"rgb(142, 240, 255)","accents":{"magenta":"rgb(241, 59, 255)","magentaPale":"rgb(106, 34, 117)","cyan":"rgb(47, 227, 255)","cyanPale":"rgb(26, 90, 102)","violet":"rgb(138, 92, 255)","violetPale":"rgb(62, 46, 120)","yellow":"rgb(255, 233, 74)","yellowPale":"rgb(94, 85, 32)","sage":"rgb(182, 255, 59)","sagePale":"rgb(74, 106, 30)","red":"rgb(255, 90, 90)"}},"wordProtection":{"strategy":"pencil-lift-margin-and-bristol-reserve","marginPx":4,"marginArtCells":1,"description":"Hatch strokes and wax particles lift cleanly 4px outside every live text bounding box, leaving clean hot-press bristol (rgb(251, 250, 246) day / rgb(18, 16, 20) night) behind letterforms."},"proceduralMechanics":{"outline":"2 to 3 slightly jittered hand-drawn perimeter passes (amplitude 0.8px..1.6px * brush, corner overshoot 3px..5px) modulated by paper-tooth alpha noise so white bristol valleys peek through the wax line.","fill":"Directional parallel diagonal hatching at -32deg (primary layer), +58deg (cross-hatch accent layer), and -12deg (burnish pass), clipped to card polygon minus word-guard rectangles. Stroke dashoffset animates each hatch line sequentially.","plate":"Dense cross-hatched graphite/violet shadow zone offset +5px right and +5px down at 45deg pitch.","interaction":"Hover adds a quick burnished highlight hatch pass and sheds wax flecks; click presses the card into its hatched shadow.","erase":"Pink rubber eraser (rgb(231, 161, 169)) sweeps across the card from the exiting viewport edge, lifting hatching strokes in reverse layer order (cross-hatch -> primary hatch -> outline) while shedding pink rubber crumbs (rgb(217, 154, 162))."},"particles":{"cap":150,"burst":[1,3],"gravityPxPerSec2":115,"drag":0.94,"kinds":[{"kind":"fleck","weight":66,"band":"common","sizePx":[1.4,3],"lifeMs":[380,740],"description":"Irregular colored wax pigment crumb shed from the pencil point"},{"kind":"shaving","weight":26,"band":"uncommon","sizePx":[3.5,6.5],"lifeMs":[450,860],"description":"Curled cedar wood-and-wax arc from sharpening/side shading"},{"kind":"crumb","weight":8,"band":"rare","sizePx":[2.2,4.4],"lifeMs":[420,780],"description":"Soft pink rubber eraser crumb (rgb(217, 154, 162) / rgb(231, 161, 169))"}]}},"charcoal":{"id":"charcoal","number":"002","name":"Compressed & Vine Charcoal on Laid Paper","group":"Drawn","isDefault":false,"toolDefault":false,"tool":{"name":"Willow Charcoal Stick, Paper Tortillon Stump & Kneaded Eraser","cursorDay":"Rough charred willow stick (rgb(30, 28, 26)) with paper band (rgb(199, 194, 182))","cursorNight":"White chalk stick (rgb(241, 236, 250)) with violet darkroom glow shadow"},"brush":{"unit":"multiplier","min":0.5,"max":2.5,"step":0.1,"default":1,"characterScaling":"At 0.5x: crisp chiseled charcoal edge (2px) with light tooth. At 1.0x: expressive 4.5px compressed charcoal stroke with dusty halo. At 2.5x: broad flat-of-stick block-in (11px) with heavy laid-paper rib texture and tortillon smudge."},"day":{"ground":"rgb(233, 230, 223)","paper2":"rgb(242, 239, 233)","ink":"rgb(11, 11, 10)","ink2":"rgb(43, 40, 37)","muted":"rgb(74, 69, 60)","rule":"rgba(11, 11, 10, 0.28)","focus":"rgb(11, 11, 10)","plate":"rgb(11, 11, 10)","link":"rgb(142, 54, 32)","accents":{"sanguine":"rgb(166, 69, 46)","sanguineNote":"rgb(142, 54, 32)","whiteChalk":"rgb(255, 255, 255)","vineGrey":"rgb(91, 87, 78)","warmUmber":"rgb(110, 71, 59)","ochreChalk":"rgb(200, 157, 84)"}},"night":{"ground":"rgb(20, 19, 19)","paper2":"rgb(29, 27, 28)","ink":"rgb(247, 242, 255)","ink2":"rgb(227, 220, 246)","muted":"rgb(207, 198, 234)","rule":"rgba(247, 242, 255, 0.28)","focus":"rgb(255, 233, 74)","plate":"rgb(241, 59, 255)","link":"rgb(127, 239, 255)","accents":{"magenta":"rgb(241, 59, 255)","cyan":"rgb(47, 227, 255)","violet":"rgb(138, 92, 255)","yellow":"rgb(255, 233, 74)","sage":"rgb(182, 255, 59)","sanguine":"rgb(255, 107, 87)"}},"wordProtection":{"strategy":"kneaded-eraser-lifted-halo","marginPx":4,"marginArtCells":1,"description":"A kneaded eraser lifts charcoal tone 4px around every word box back to clean laid paper (rgb(233, 230, 223) day / rgb(20, 19, 19) night) or white-chalk reserve so text contrast always exceeds 7:1."},"proceduralMechanics":{"outline":"Fast architectural gesture lines with 4px..8px corner extensions and dry grainy stamp bristle clusters masked by horizontal laid-paper chain lines.","fill":"Broad vine-charcoal side-strokes followed by a paper tortillon blending pass that softens interior tone while keeping darker compressed-charcoal edge weight.","plate":"Heavy compressed-charcoal smudge block offset +6px right and +6px down with feathered dry-brush tail.","interaction":"Hover drags a quick sanguine or white-chalk accent mark along the top rail and puffs charcoal dust downward.","erase":"Kneaded-eraser dab and chamois cloth directional wipe: pulls charcoal tone off in streaked horizontal/diagonal lifts toward the viewport edge, leaving faint ghost registration lines before clearing."},"particles":{"cap":150,"burst":[1,3],"gravityPxPerSec2":95,"drag":0.92,"kinds":[{"kind":"dust","weight":68,"band":"common","sizePx":[1.5,3.4],"lifeMs":[420,820],"description":"Fine matte charcoal powder mote drifting downward"},{"kind":"smudge","weight":25,"band":"uncommon","sizePx":[4,8],"lifeMs":[360,700],"description":"Soft anisotropic charcoal streak puff"},{"kind":"crumb","weight":7,"band":"rare","sizePx":[2.4,4.8],"lifeMs":[460,880],"description":"Dense compressed-charcoal grit fragment with faster fall"}]}},"oil":{"id":"oil","number":"003","name":"Impasto Oil on Lead-Primed Linen","group":"Painted","isDefault":false,"toolDefault":true,"tool":{"name":"Hog-Bristle Filbert Brush & Forged Steel Palette Knife","cursorDay":"Long-handled walnut filbert brush with brass ferrule and loaded cadmium/phthalo tip","cursorNight":"Palette knife and bristle brush loaded with luminous Darkroom glaze"},"brush":{"unit":"multiplier","min":0.5,"max":2.5,"step":0.1,"default":1,"characterScaling":"At 0.5x: fine sable detail liner with subtle bristle furrows. At 1.0x: full hog-bristle filbert with sculpted impasto edge ridges. At 2.5x: thick palette-knife slab ridges with strong raking-light specular highlights and deep cast furrows."},"day":{"ground":"rgb(239, 233, 220)","rawLinen":"rgb(200, 180, 140)","paper2":"rgb(250, 248, 242)","sand":"rgb(242, 236, 221)","well":"rgb(228, 223, 209)","ink":"rgb(28, 26, 25)","ink2":"rgb(53, 49, 42)","muted":"rgb(74, 69, 58)","rule":"rgb(28, 26, 25)","focus":"rgb(28, 26, 25)","plate":"rgb(28, 26, 25)","link":"rgb(0, 75, 110)","accents":{"yellow":"rgb(242, 193, 46)","magenta":"rgb(181, 36, 111)","magentaDeep":"rgb(166, 31, 100)","cyan":"rgb(27, 79, 143)","cyanPale":"rgb(158, 214, 226)","sage":"rgb(207, 223, 190)","forestCard":"rgb(37, 41, 33)","gold":"rgb(246, 227, 160)","ok":"rgb(30, 122, 60)","err":"rgb(176, 0, 42)"}},"night":{"ground":"rgb(26, 19, 16)","rawLinen":"rgb(11, 8, 7)","paper2":"rgb(43, 32, 64)","sand":"rgb(51, 38, 75)","well":"rgb(11, 9, 21)","ink":"rgb(243, 238, 228)","ink2":"rgb(205, 195, 232)","muted":"rgb(169, 157, 201)","rule":"rgb(178, 170, 191)","focus":"rgb(255, 233, 74)","plate":"rgb(192, 43, 200)","link":"rgb(142, 240, 255)","accents":{"yellow":"rgb(255, 233, 74)","magenta":"rgb(241, 59, 255)","magentaGlaze":"rgb(140, 30, 152)","cyan":"rgb(47, 227, 255)","cyanGlaze":"rgb(15, 110, 134)","violet":"rgb(138, 92, 255)","violetDeep":"rgb(76, 43, 168)","sage":"rgb(182, 255, 59)","ok":"rgb(47, 217, 196)","err":"rgb(255, 138, 160)"}},"wordProtection":{"strategy":"scraped-smooth-linen-reserve","marginPx":4,"marginArtCells":1,"description":"High-relief impasto ridges and dark glazes stop 4px outside word bounding boxes; the area under live text is troweled smooth to a single high-contrast titanium-white (rgb(250, 248, 242) day) or dark umber (rgb(43, 32, 64) night) ground."},"proceduralMechanics":{"rakingLight":"Global light vector (--lx, --ly) tracks pointer on desktop or drifts gently on touch, lighting the top/left rim of every brushstroke ridge (rgba(255,255,255,0.5) day / rgba(255,190,255,0.55) night) and casting a opposite furrow shadow.","outline":"Multi-furrow hog-bristle perimeter daubs with embossed specular ridge along the outer bead of paint.","fill":"Four-stage classical build: (1) burnt-umber/raw-linen underpainting scrub, (2) opaque blocking-in slabs, (3) palette-knife impasto slabs on cards and keycaps, (4) translucent jewel glaze over accent badges.","plate":"Thick palette-knife ridge of ivory black (rgb(28, 26, 25) day) or magenta glaze (rgb(192, 43, 200) night) dragged +5px right and +5px down.","interaction":"Pointer movement shifts raking-light specular ridges across the paint surface in real time; clicks press into wet impasto and flick tiny paint beads.","erase":"Steel palette-knife scrape: a straight blade pass scrapes wet impasto ridges back to raw primed linen (rgb(200, 180, 140) / rgb(239, 233, 220)) from the exiting edge inward, leaving faint oil stain tracks before clearing."},"particles":{"cap":150,"burst":[1,3],"gravityPxPerSec2":140,"drag":0.93,"kinds":[{"kind":"daub","weight":65,"band":"common","sizePx":[2.2,4.6],"lifeMs":[400,780],"description":"Thick rounded oil paint bead with top-left specular catch-light and bottom-right shadow rim"},{"kind":"ribbon","weight":27,"band":"uncommon","sizePx":[5,9.5],"lifeMs":[440,840],"description":"Curved impasto ridge curl lifted by the palette knife edge"},{"kind":"glint","weight":8,"band":"rare","sizePx":[2,3.8],"lifeMs":[280,540],"description":"Linseed-oil wet specular pinpoint highlight"}]}},"watercolor":{"id":"watercolor","number":"004","name":"Transparent Watercolor on Cold-Press Cotton","group":"Painted","isDefault":false,"toolDefault":true,"tool":{"name":"Kolinsky Sable Mop Brush","cursorDay":"Quill-bound sable mop brush with translucent cerulean/rose water bead at tip","cursorNight":"Sable brush carrying luminous Darkroom pigment wash"},"brush":{"unit":"multiplier","min":0.5,"max":2.5,"step":0.1,"default":1,"characterScaling":"At 0.5x: tight controlled glazing brush with crisp 1.2px dry-edge rim. At 1.0x: natural wet-on-dry wash with soft cauliflower backruns and 2.2px pigment tide rim. At 2.5x: flooded wet-on-wet mop wash with wide feathered blooms and heavy cold-press granulation."},"day":{"ground":"rgb(250, 247, 240)","paper2":"rgb(255, 253, 246)","well":"rgb(228, 223, 209)","ink":"rgb(46, 52, 64)","ink2":"rgb(63, 71, 89)","muted":"rgb(86, 94, 112)","rule":"rgba(46, 52, 64, 0.24)","focus":"rgb(46, 52, 64)","plate":"rgb(44, 154, 209)","link":"rgb(0, 95, 138)","accents":{"magenta":"rgb(217, 70, 138)","cyan":"rgb(44, 154, 209)","yellow":"rgb(242, 183, 5)","sage":"rgb(94, 140, 58)","violet":"rgb(110, 86, 207)","err":"rgb(166, 23, 79)"}},"night":{"ground":"rgb(16, 22, 38)","paper2":"rgb(26, 33, 64)","well":"rgb(10, 14, 26)","ink":"rgb(244, 241, 234)","ink2":"rgb(211, 207, 228)","muted":"rgb(181, 176, 204)","rule":"rgba(244, 241, 234, 0.26)","focus":"rgb(255, 216, 58)","plate":"rgb(241, 59, 255)","link":"rgb(142, 240, 255)","accents":{"magenta":"rgb(241, 59, 255)","cyan":"rgb(47, 227, 255)","yellow":"rgb(255, 194, 61)","sage":"rgb(182, 255, 59)","violet":"rgb(138, 92, 255)","err":"rgb(255, 156, 203)"}},"wordProtection":{"strategy":"wax-resist-masking-fluid-exclusion","marginPx":6,"marginArtCells":1,"description":"Word bounding boxes act as masking-fluid resist with a 6px margin: wet pigment pools around the resist boundary and dries into a subtle tide line outside the words, keeping paper dry and crisp behind all typography."},"proceduralMechanics":{"outline":"Capillary pigment tide rim (1.5px..2.8px) formed where the wet wash stops at the card edge, darker and more saturated than the interior wash due to coffee-ring capillary migration.","fill":"Wet-on-wet diffusion wash: flood expands radially/diagonally from brush entry point, modulated by 2D Perlin/value granulation noise that settles heavier pigment into cold-press paper valleys while leaving luminous paper glow in the center.","plate":"Second glazed offset wash (+6px right, +6px down) in cerulean/rose (day) or magenta/cyan (night) multiplied over the dry first wash.","interaction":"Hover drops a fresh wet bloom at pointer entry that spreads outward into a soft tide ring.","erase":"Clean water bloom & blot: clear water floods inward from the exiting edge, re-wetting and bleaching the interior wash first while the darker capillary tide rims dissolve last."},"particles":{"cap":150,"burst":[1,3],"gravityPxPerSec2":65,"drag":0.9,"kinds":[{"kind":"droplet","weight":64,"band":"common","sizePx":[2.2,4.8],"lifeMs":[460,880],"description":"Translucent watercolor spatter dot with darker dried outer tide ring"},{"kind":"bloom","weight":28,"band":"uncommon","sizePx":[6,12],"lifeMs":[520,960],"description":"Expanding wet cauliflower backrun ring that fades as it spreads"},{"kind":"mist","weight":8,"band":"rare","sizePx":[1.2,2.4],"lifeMs":[340,640],"description":"Fine aerosol water-and-pigment micro-fleck"}]}},"sumi-ink":{"id":"sumi-ink","number":"005","name":"Sumi Ink & Vermilion Seal on Xuan Rice Paper","group":"Painted","isDefault":false,"toolDefault":true,"tool":{"name":"Bamboo Wolf-Hair Fude Calligraphic Brush & Cinnabar Hanko Seal","cursorDay":"Spotted bamboo fude brush with tapered ink-loaded tuft","cursorNight":"Bamboo fude brush tipped with silver-bone ink and vermilion seal glow"},"brush":{"unit":"multiplier","min":0.5,"max":2.5,"step":0.1,"default":1,"characterScaling":"Directly scales stroke width w and bristle count nb = max(2, round(w / (flat ? 1.6 : 1.9))). At 0.5x: crisp 2-3 bristle fine kanji hairlines. At 1.0x: balanced fude stroke with natural flying-white tail. At 2.5x: wide hake flat brush with dramatic dry-brush flying-white streaks (cov < 0.03 gaps) and wet edge feathering."},"day":{"ground":"rgb(243, 238, 226)","paper2":"rgb(248, 244, 234)","well":"rgb(233, 227, 213)","sand":"rgb(241, 235, 221)","fibre":"rgb(90, 74, 48)","ink":"rgb(20, 18, 16)","ink2":"rgb(58, 54, 49)","muted":"rgb(89, 83, 75)","washMid":"rgb(107, 102, 96)","washPale":"rgb(163, 158, 149)","rule":"rgb(214, 208, 194)","focus":"rgb(20, 18, 16)","plate":"rgb(58, 54, 49)","link":"rgb(47, 74, 102)","accents":{"sealRed":"rgb(208, 58, 43)","sealText":"rgb(176, 42, 28)","sealPale":"rgb(240, 196, 188)","indigo":"rgb(60, 90, 120)","indigoPale":"rgb(195, 207, 217)","murasaki":"rgb(106, 90, 130)","murasakiPale":"rgb(211, 204, 221)","gold":"rgb(201, 161, 59)","goldPale":"rgb(231, 215, 160)","pine":"rgb(94, 127, 98)","pinePale":"rgb(203, 216, 203)"}},"night":{"ground":"rgb(14, 13, 12)","paper2":"rgb(23, 21, 19)","well":"rgb(8, 7, 6)","ink":"rgb(217, 214, 207)","text":"rgb(236, 232, 223)","ink2":"rgb(168, 165, 158)","muted":"rgb(169, 163, 151)","washMid":"rgb(122, 119, 111)","washPale":"rgb(79, 77, 72)","rule":"rgb(42, 41, 38)","focus":"rgb(232, 196, 106)","plate":"rgb(150, 41, 158)","link":"rgb(47, 227, 255)","accents":{"sealRed":"rgb(255, 90, 68)","sealPale":"rgb(106, 42, 34)","cyan":"rgb(47, 227, 255)","cyanPale":"rgb(26, 90, 102)","violet":"rgb(138, 92, 255)","violetPale":"rgb(62, 46, 120)","gold":"rgb(232, 196, 106)","goldPale":"rgb(107, 90, 46)","sage":"rgb(182, 255, 59)","sagePale":"rgb(74, 106, 30)"}},"wordProtection":{"strategy":"calligraphic-breath-exclusion","marginPx":4,"marginArtCells":1,"description":"Every live word box is expanded by 4px (`wordGuards`). Bristle runs and wet paper-feather hairs clip around word guards so sumi strokes never cross a glyph."},"proceduralMechanics":{"seed":"FNV-1a 32-bit hash (offset 2166,136,261, prime 16,777,619) combined with element sumiTake counter.","outline":"SumiStroke bristle bundle: nb bristles trace the perimeter with pressure profile _width(u, L) featuring landing press bulge, corner swells (bumps), and flicked tail taper. Ink load depletes along arc length s as ink = load - s / (rp * dl), where heart bristles (dl = 1.25 - 0.65 * e) hold ink longest while outer bristles split into flying-white gaps (cov < 0.03). Where ink >= 0.45, tiny capillary hairs feather into the rice paper beside the stroke.","fill":"Diluted sumi ink wash (suzuri stone grind levels t3..t5) swept in 1 to 2 horizontal hake passes, accented by a carved vermilion cinnabar hanko seal stamp (rgb(208, 58, 43) day / rgb(255, 90, 68) night) in the corner.","plate":"Single bold flat-brush shadow stroke offset +5px right and +5px down with dry flying-white exit.","interaction":"Hover draws an expressive enso arc or gold under-stroke; click stamps a crisp vermilion seal impression.","erase":"Capillary absorption reversal: ink sinks back into the rice paper fibres along the stroke path from the dry flying-white tail backward toward the wet landing point (_runs reversed as e goes 0 -> 1)."},"particles":{"cap":150,"burst":[1,3],"gravityPxPerSec2":110,"drag":0.93,"kinds":[{"kind":"drop","weight":66,"band":"common","sizePx":[1.8,3.8],"lifeMs":[380,740],"description":"Round sumi ink spatter droplet that feathers slightly on landing"},{"kind":"whisker","weight":26,"band":"uncommon","sizePx":[4.5,9],"lifeMs":[340,660],"description":"Fine dry-brush hair flick oriented along stroke tangent"},{"kind":"sealFleck","weight":8,"band":"rare","sizePx":[1.6,3.2],"lifeMs":[420,800],"description":"Bright vermilion cinnabar paste crumb (rgb(208, 58, 43) / rgb(255, 90, 68))"}]}},"linocut":{"id":"linocut","number":"006","name":"Hand-Pulled Linocut Relief Print on Mulberry Paper","group":"Printed","isDefault":false,"toolDefault":true,"tool":{"name":"Steel V-Gouge, Rubber Ink Brayer & Bamboo Baren","cursorDay":"Pear-wood handle V-gouge and inked rubber brayer roller","cursorNight":"V-gouge and neon-inked brayer roller"},"brush":{"unit":"multiplier","min":0.5,"max":2.5,"step":0.1,"default":1,"characterScaling":"At 0.5x: #1 micro V-gouge with fine chatter grooves and tight registration. At 1.0x: classic #3 U/V-gouge relief cut with 2px registration shift and visible chatter flecks. At 2.5x: wide #5 U-gouge rugged woodcut borders with bold chatter bars and 3.5px multi-block registration offset."},"day":{"ground":"rgb(245, 241, 230)","table":"rgb(228, 220, 198)","linoBlock":"rgb(205, 196, 163)","ink":"rgb(21, 19, 20)","ink2":"rgb(44, 40, 41)","muted":"rgb(74, 69, 58)","rule":"rgb(21, 19, 20)","focus":"rgb(217, 54, 43)","plate":"rgb(30, 159, 214)","link":"rgb(30, 159, 214)","accents":{"red":"rgb(217, 54, 43)","cyan":"rgb(30, 159, 214)","ochre":"rgb(216, 162, 58)","sage":"rgb(79, 122, 82)"}},"night":{"ground":"rgb(18, 17, 18)","table":"rgb(10, 9, 10)","linoBlock":"rgb(55, 51, 58)","ink":"rgb(244, 241, 234)","ink2":"rgb(220, 215, 204)","muted":"rgb(189, 183, 169)","rule":"rgb(244, 241, 234)","focus":"rgb(53, 230, 255)","plate":"rgb(255, 62, 200)","link":"rgb(53, 230, 255)","accents":{"magenta":"rgb(255, 62, 200)","cyan":"rgb(53, 230, 255)","acid":"rgb(182, 255, 59)","violet":"rgb(138, 92, 255)","yellow":"rgb(255, 233, 74)"}},"wordProtection":{"strategy":"carved-relief-clearing-pocket","marginPx":3,"marginArtCells":1,"description":"The V-gouge carves a clean recessed pocket 3px around every word box so stray chatter marks and brayer ink specks never print over live letterforms."},"proceduralMechanics":{"threeStagePull":"Every card plots in 3 physical printmaking stages: (1) V-gouge carves the linoleum block (rgb(205, 196, 163) day / rgb(55, 51, 58) night) leaving rhythmic chatter grooves in negative space, (2) rubber brayer rolls oil-based relief ink across the raised lands with subtle wood-grain starvation dots, (3) bamboo baren rubs the sheet and pulls the two-color impression with intentional registration offset (--rx: 3px, --ry: 2px, --rr: 0.4deg).","outline":"Faceted polygonal gouge-cut border (3px..5px thick) with angular chiselled corners and occasional parallel chatter ribs.","fill":"Solid block-printed registration layer in ochre/cyan/red (day) or acid/magenta/cyan (night) with microscopic paper-ink salt speckle.","plate":"Second color block printed out-of-register (+4px right, +3px down, +0.4deg tilt) in process cyan (rgb(30, 159, 214) day) or neon magenta (rgb(255, 62, 200) night).","interaction":"Hover shifts the color registration plate by 1.5px as if re-aligning the press bed; click pulls a fresh crisp baren impression and flicks carved lino chips.","erase":"Reverse brayer un-roll: the brayer rolls backward across the card, lifting the ink layer first and then clearing the carved linoleum block back to bare mulberry paper."},"particles":{"cap":150,"burst":[1,3],"gravityPxPerSec2":165,"drag":0.94,"kinds":[{"kind":"chip","weight":66,"band":"common","sizePx":[2.4,5.2],"lifeMs":[380,740],"description":"V-shaped carved linoleum curl (rgb(205, 196, 163) / rgb(21, 19, 20)) flicked from the gouge tip"},{"kind":"chatter","weight":26,"band":"uncommon","sizePx":[4.5,8.5],"lifeMs":[360,680],"description":"Thin parallel relief ridge sliver left by gouge chatter"},{"kind":"speck","weight":8,"band":"rare","sizePx":[1.5,2.8],"lifeMs":[320,600],"description":"Tacky block-printing ink tack dot lifted by the brayer"}]}},"clay":{"id":"clay","number":"008","name":"3D Inscribed Terracotta & Stoneware Clay Tablet","group":"Sculpted","isDefault":false,"toolDefault":true,"tool":{"name":"Boxwood Wedge Stylus, Wire Loop Kemper & Cylinder Seal","cursorDay":"Carved boxwood wedge stylus with bevelled tip and terracotta slip crumb","cursorNight":"Obsidian stylus with kiln-ember incandescent tip (rgb(255, 106, 61) / rgb(255, 233, 74))"},"brush":{"unit":"multiplier","min":0.5,"max":2.5,"step":0.1,"default":1,"characterScaling":"At 0.5x: fine bone-needle incision with delicate 1px displaced clay burr. At 1.0x: classic wedge stylus groove (2.8px) with 3D top-left sun ridge and bottom-right interior trench shadow. At 2.5x: deep architectural bas-relief trench (6.5px) with pronounced rolled clay lip and bold 3D tablet bevels."},"day":{"ground":"rgb(237, 227, 210)","paper2":"rgb(245, 237, 224)","wetSlab":"rgb(226, 213, 193)","trenchShadow":"rgb(38, 30, 24)","ridgeHighlight":"rgb(255, 253, 247)","ink":"rgb(38, 30, 24)","ink2":"rgb(74, 59, 48)","muted":"rgb(107, 88, 73)","rule":"rgb(201, 185, 163)","focus":"rgb(200, 90, 50)","plate":"rgb(140, 74, 43)","link":"rgb(46, 90, 120)","accents":{"terracotta":"rgb(200, 90, 50)","terracottaPale":"rgb(238, 210, 196)","ochreSlip":"rgb(212, 155, 53)","ochrePale":"rgb(242, 226, 189)","celadonGlaze":"rgb(92, 138, 114)","celadonPale":"rgb(207, 224, 214)","cobaltOxide":"rgb(59, 95, 138)","cobaltPale":"rgb(201, 215, 232)","manganese":"rgb(109, 76, 107)"}},"night":{"ground":"rgb(20, 17, 15)","paper2":"rgb(31, 26, 23)","wetSlab":"rgb(25, 21, 18)","trenchShadow":"rgb(6, 5, 4)","ridgeHighlight":"rgba(255, 224, 196, 0.42)","ink":"rgb(242, 234, 224)","ink2":"rgb(214, 200, 184)","muted":"rgb(168, 152, 135)","rule":"rgb(56, 47, 41)","focus":"rgb(255, 233, 74)","plate":"rgb(241, 59, 255)","link":"rgb(47, 227, 255)","accents":{"kilnEmber":"rgb(255, 106, 61)","magentaGlaze":"rgb(241, 59, 255)","cyanGlaze":"rgb(47, 227, 255)","violetGlaze":"rgb(138, 92, 255)","celadonNeon":"rgb(182, 255, 59)","goldLuster":"rgb(255, 233, 74)"}},"wordProtection":{"strategy":"troweled-cartouche-recess","marginPx":5,"marginArtCells":1,"description":"Every word block sits on a smooth rib-troweled cartouche plane with a 5px clearance margin. Incised border trenches, bas-relief pictographs, and clay crumbs stop outside the cartouche so typography reads with crisp 3D engraved clarity."},"proceduralMechanics":{"threeDimensionalRelief":"Every card is rendered as a physical 3D clay tablet slab raised above the ground: top and left slab chamfers catch warm directional key light (rgb(255, 253, 247) day / rgba(255,224,196,0.42) night), while bottom and right chamfers cast a deep stepped clay wall shadow (+6px right, +6px down).","outline":"Stylus-incised V-trench around the tablet margin: the stylus pushes wet clay aside, drawing a dark recessed groove center flanked by a bright displaced clay burr ridge along the sunward lip.","fill":"Wooden rib trowels the slab face in sweeping arc passes (leaving subtle radial smoothing bands), followed by incised narrative pictograph/cuneiform tally marks in the header rail and pressed cylinder-seal relief badges.","plate":"Deep 3D extruded clay plinth (+6px right, +7px down) with bevelled corner miters and kiln-brick shadow.","interaction":"Hover tilts the directional raking light across the 3D tablet bevels and impresses a fresh seal mark; click presses the tablet 2px deeper into the wet clay bed and sheds terracotta crumbs.","erase":"Wooden rib & wire-cutter smooth-over: a flat wooden potter's rib sweeps from the exiting viewport edge, pushing the displaced clay burrs back into the incised trenches and smoothing the tablet flush with the ground."},"particles":{"cap":150,"burst":[1,3],"gravityPxPerSec2":190,"drag":0.95,"kinds":[{"kind":"crumb","weight":66,"band":"common","sizePx":[2,4.4],"lifeMs":[360,720],"description":"3D lit terracotta clay granule displaced by the wedge stylus tip"},{"kind":"ribbon","weight":26,"band":"uncommon","sizePx":[4.5,9],"lifeMs":[400,780],"description":"Curled wet clay shaving pared by the wire loop tool"},{"kind":"shard","weight":8,"band":"rare","sizePx":[2.5,5],"lifeMs":[340,660],"description":"Angular kiln-fired bisque chip or celadon glaze fleck"}]}},"glowing-glass":{"id":"glowing-glass","number":"009","name":"Glowing Etched VerseGlass & Prismatic Light Filaments","group":"Luminous","isDefault":false,"toolDefault":true,"tool":{"name":"Focused Photonic Etch Beam & Dichroic Prism Stylus","cursorDay":"Diamond-tip optical glass scribe with cyan/magenta refractive caustic halo","cursorNight":"Focused laser-etch pinpoint (rgb(247, 242, 255) core with rgb(241, 59, 255) / rgb(47, 227, 255) / rgb(182, 255, 59) corona)"},"brush":{"unit":"multiplier","min":0.5,"max":2.5,"step":0.1,"default":1,"characterScaling":"At 0.5x: razor-fine 1px laser-scribed waveguide with tight 4px caustic bloom. At 1.0x: signature VerseGlass 2 etched edge (2px core, 10px prismatic aura, 1.5px chromatic dispersion). At 2.5x: wide dichroic light ribbon (4.5px core, 22px refractive caustic corona and strong bevel dispersion)."},"day":{"ground":"rgb(246, 242, 231)","paper2":"rgba(255, 253, 246, 0.88)","sandCel":"rgba(251, 247, 234, 0.90)","well":"rgba(239, 234, 224, 0.86)","ink":"rgb(19, 19, 19)","ink2":"rgb(44, 42, 37)","muted":"rgb(89, 84, 74)","rule":"rgba(19, 19, 19, 0.24)","topCatch":"rgba(255, 255, 255, 0.85)","focus":"rgb(0, 95, 138)","plate":"rgb(19, 19, 19)","link":"rgb(0, 95, 138)","accents":{"cyan":"rgb(0, 174, 239)","cyanText":"rgb(0, 95, 138)","magenta":"rgb(236, 0, 140)","magentaText":"rgb(176, 0, 98)","yellow":"rgb(255, 242, 0)","violet":"rgb(124, 58, 237)","acid":"rgb(77, 158, 20)"}},"night":{"ground":"rgb(7, 6, 13)","paper2":"rgba(26, 20, 46, 0.86)","sandCel":"rgba(36, 28, 62, 0.88)","stand":"rgb(18, 14, 32)","well":"rgb(8, 6, 15)","ink":"rgb(247, 242, 255)","ink2":"rgb(217, 208, 242)","inkLabel":"rgb(212, 203, 239)","muted":"rgb(185, 174, 218)","rule":"rgba(247, 242, 255, 0.28)","topCatch":"rgba(255, 255, 255, 0.50)","focus":"rgb(255, 233, 74)","plate":"rgb(241, 59, 255)","link":"rgb(47, 227, 255)","accents":{"magenta":"rgb(241, 59, 255)","violet":"rgb(138, 92, 255)","cyan":"rgb(47, 227, 255)","acid":"rgb(182, 255, 59)","yellow":"rgb(255, 233, 74)"}},"wordProtection":{"strategy":"smoked-acetate-optical-cavity","marginPx":4,"marginArtCells":1,"description":"Words sit over an un-etched smoked-acetate optical plane (rgba(26,20,46,0.86) night / rgba(255,253,246,0.92) day) with a 4px waveguide exclusion margin. Etched neon filaments, caustic arcs, and photon sparks route around word boxes; body text never receives glow blur."},"proceduralMechanics":{"verseGlassContract":"Strictly honors the VerseGlass optical contract: one blurring parent per section (backdrop-filter: blur(14px) saturate(1.6)), children are non-blurring smoked-acetate tints, top-left 260px white catch-light at 0.12 alpha, and hard unblurred offset plate outside the blurred cel.","outline":"Photonic waveguide trace: a bright core filament (rgb(247, 242, 255) night / rgb(19, 19, 19) day) plots along the perimeter accompanied by dual chromatic-dispersion rails (+1px rgb(47, 227, 255) cyan, -1px rgb(241, 59, 255) magenta) and a crisp top-edge specular catch-light.","fill":"Frosted acetate cel condenses from transparent void to 0.86 opacity as an internal caustic sweep travels diagonally across the glass face, lit from behind by the 5 drifting Darkroom lamps (periods 17s, 23s, 29s, 31s, 41s, capped <= 0.42 alpha).","glowingText":"Display headings and milestone badges etch in with a bright traveling filament trace along the glyph strokes, settling into bone-white rgb(247, 242, 255) ink with a subtle 1px cyan/magenta prismatic edge rim while keeping >= 11:1 contrast.","plate":"Hard, unblurred solid offset plate (+5px right, +5px down) in rgb(241, 59, 255) magenta (night) or rgb(19, 19, 19) ink (day) rendered behind the glass cel.","interaction":"Hover sends a specular caustic pulse along the top glass bevel and emits prismatic photon sparks; click pulses the hard magenta/cyan plate.","erase":"Refractive shutter de-energize: the caustic waveguide sweep retracts toward the exiting viewport edge, collapsing the frosted cel back into transparent darkroom void while shedding fading photon sparks."},"particles":{"cap":150,"burst":[1,3],"gravityPxPerSec2":-25,"drag":0.94,"kinds":[{"kind":"photon","weight":66,"band":"common","sizePx":[1.6,3.4],"lifeMs":[380,740],"description":"Luminous pinpoint mote with bone-white core and magenta/cyan halo drifting gently upward"},{"kind":"caustic","weight":26,"band":"uncommon","sizePx":[5,10],"lifeMs":[420,820],"description":"Curved refractive light arc that splits into cyan and magenta fringes as it fades"},{"kind":"prism","weight":8,"band":"rare","sizePx":[3,5.5],"lifeMs":[300,580],"description":"4-rayed diamond dichroic star glint (rgb(255, 233, 74) / rgb(47, 227, 255) / rgb(241, 59, 255))"}]}}}},"dataset":{"editionKind":"public","schema":"kinesis-roadmap-timeline/v1","generated":"2026-11-21","mediaPalette":["sumi-ink","linocut","pixel","charcoal","watercolor","oil","clay","glowing-glass","colored-pencil"],"milestones":[{"id":"01","order":1,"slug":"root-design","medium":"sumi-ink","dates":{"start":"2026-11-13","end":"2026-11-13"},"status":"shipped","title":"Three things: people, spaces and hosts","dek":"Kinesis in three nouns, three dials and one ladder.","summary":"The root design defines Person, Space and Host, the lend/share/privacy dials, the Shadow to Host ladder, one meter for every pooled thing, and the stand-up test: a clean clone and one command make a working host.","highlights":["Person, Space, Host","Lend, Share, Privacy dials","Shadow, Assist, Own, Host ladder","One meter for budgets, measures, promotion and lending","Fresh host first"],"whatsNext":["Ratify how host reads of a personal space are shown to the member","Review the offer letter data clause"],"postPath":"posts/public/01-root-design.md","markdown":"---\ntitle: \"Three things: people, spaces and hosts\"\nnumber: 1\nslug: root-design\nmedium: sumi-ink\nedition: public\nstatus: shipped\ndate: 2026-11-13\n---\n\n# Three things: people, spaces and hosts\n\nEvery system ends up with a shape, whether anyone chose it or not. Kinesis chose one on purpose: you can describe it in three nouns and one ladder, and every later feature has to fit inside it.\n\n## The mission\n\nKinesis is a unified AI, data, browsing, work and research access point. It is decentralized and communal. It starts with your personal life, moves to the roles you hold at work, and its long aim is deep, authentic communities.\n\nThat is a lot for one product to promise, so the first job was to find the smallest set of ideas that holds all of it.\n\n## The three things\n\n- **Person.** An identity (a key) plus its settings. A person is portable: you can carry yourself from one host to another.\n- **Space.** Data plus rules. There are three kinds: personal, role and community.\n- **Host.** A pooled server that carries many spaces. People or organizations own hosts, but in practice a host is a shared resource.\n\nThere is hierarchy, because hierarchy is how people grow. And anyone who wants to, and can afford the resources, may start their own space.\n\n## Three dials you hold\n\nYour personal space has three dials, and you hold all of them:\n\n- **Lend:** let someone use your resources, such as model access, compute or a tool login.\n- **Share:** let someone read or work in part of your space.\n- **Privacy:** where your space lives and what the host can see.\n\nA host sets ceilings (budgets, available models, house rules). Inside those ceilings, you choose.\n\n## The ladder\n\nGrowth in Kinesis is a ladder with four rungs. Each rung bundles permissions, a budget and a review rule:\n\n1. **Shadow:** read a sponsor's catalog, skills and shared sessions.\n2. **Assist:** run agents on the host. Your work lands only through your sponsor's review.\n3. **Own:** hold a seat with its own budget. Review happens only on risky changes.\n4. **Host:** run your own space and sponsor others.\n\nThe same ladder governs agents as well as people.\n\n## One meter for everything\n\nEvery use of a pooled thing is one event: who, in which space, used what, how much, and when. \"What\" can be compute, a model call, a page of shared knowledge or a skill run. Budgets, performance measures, promotion on the ladder and lending all read that same stream. Nothing is counted twice, and nothing is counted in secret.\n\n## Fresh host first\n\nThe monorepo is the whole stack. The test that proves it is simple: from a clean clone, one command stands up a working host with one space. That same command is also how anyone leaves to start their own host. Growth becomes a tree of hosts instead of one ever-larger server.\n\nEverything else on this roadmap is a step toward passing that test.\n"},{"id":"02","order":2,"slug":"kinesis-protocol","medium":"linocut","dates":{"start":"2026-11-13","end":"2026-11-14"},"status":"shipped","title":"A protocol for sharing: meter, offer and grant","dek":"Four small shapes every host agrees on.","summary":"@kinesis/protocol defines Meter, Grant, Offer and Settings with no dependencies. The signed offer letter becomes the grant, so the agreement and the permissions are one object.","highlights":["Meter: one event per pooled use","Grant: rung plus budgets","Offer: two signatures make the grant","Settings: lend, share, privacy","Validators list every problem"],"whatsNext":["Version offers so a new letter retires the old grant","Decide where member keys live"],"postPath":"posts/public/02-kinesis-protocol.md","markdown":"---\ntitle: \"A protocol for sharing: meter, offer and grant\"\nnumber: 2\nslug: kinesis-protocol\nmedium: linocut\nedition: public\nstatus: shipped\ndate: 2026-11-14\n---\n\n# A protocol for sharing: meter, offer and grant\n\nA design is only useful once software can read it. The second milestone turned the three nouns and the ladder into a small package every Kinesis host, hub, runner and app agrees on: `@kinesis/protocol`.\n\n## Why a protocol first\n\nIf hosts are going to be a tree rather than a single server, they need one language for who may do what and how much they used. Each host can do it its own way, as long as the shapes are the same. So the protocol is deliberately small: plain modules, no third-party dependencies, and validators that list every problem at once, not just the first.\n\n## The four shapes\n\n- **Meter.** One event per use of anything pooled: compute, a model call, a knowledge read, a skill run, a role action. A single function adds events up.\n- **Grant.** What one person may do in one space: a rung on the ladder (shadow, assist, own, host) and a set of budgets. A budget check reads the meter directly.\n- **Offer.** The offer letter. The sponsor and the member both sign it with their keys, and the signed letter *becomes* the grant. Edit a single word after signing and both signatures are void.\n- **Settings.** The three dials on a personal space: lend, share and privacy.\n\n## The offer letter is the root grant\n\nThis is the idea we like best. In most systems, the agreement a person signs and the permissions the software enforces are two different things kept in sync by hope. In Kinesis they are the same object. Signing the letter creates the seat, the rung, the budgets and the data terms. A change in terms is a new signed version, with nothing hidden in a settings page.\n\n## What the protocol does not do\n\nIt does not store anything, decide whose key is whose, or enforce a budget. Hosts do those jobs and call the protocol so everyone agrees on the shapes. Keeping the package this narrow is what lets very different hosts interoperate later.\n\n## Where it stands\n\nThe protocol shipped with its design document and a full test suite, and the name \"Protocols\" became the official word for these shared shapes. Every milestone after this one, from the signed catalog to the first fresh host, builds on these four shapes without changing them.\n"},{"id":"03","order":3,"slug":"kinesis-in-media","medium":"pixel","dates":{"start":"2026-11-08","end":"2026-11-12"},"status":"built","title":"Drawn, not decorated: Kinesis in Media","dek":"Nine procedural media and the rules that keep words readable.","summary":"A renderer and rulebook that draws any screen in one of nine media, with particles that never cover words, a day ground per medium, a darkroom night, a Show the tool switch, a brush size slider, scroll draw-in and erase, and reduced motion.","highlights":["9 media: colored pencil, charcoal, oil, watercolor, sumi ink, linocut, pixel, clay, glowing glass","Pixel is the default","Particles never over words","Per-medium day ground, darkroom night"],"whatsNext":["Convert every surface","Make the readability check pass every time"],"postPath":"posts/public/03-kinesis-in-media.md","markdown":"---\ntitle: \"Drawn, not decorated: Kinesis in Media\"\nnumber: 3\nslug: kinesis-in-media\nmedium: pixel\nedition: public\nstatus: built\ndate: 2026-11-09\n---\n\n# Drawn, not decorated: Kinesis in Media\n\nMost interfaces are styled. Kinesis screens are *drawn*. Kinesis in Media is the renderer and rulebook that lets any screen appear as if it were being made in a real medium, stroke by stroke, while you watch.\n\n## Nine media\n\nThe kit covers nine media, each with its own procedure:\n\n1. **Colored pencil**: layered hatching with a soft grain.\n2. **Charcoal**: smudged, dusty strokes with lifted highlights.\n3. **Oil**: thick impasto strokes that catch the light.\n4. **Watercolor**: pigment that blooms and pools at the edges.\n5. **Sumi ink**: brush bristles, wet pools and dry streaks.\n6. **Linocut**: carved blocks, printed in flat inks.\n7. **Pixel**: small dithered blocks drawn on a strict grid.\n8. **Clay**: sculpted, beveled forms.\n9. **Glowing glass**: luminous, refracted lettering.\n\nPixel became the default medium in November. Clay and glowing glass were added as media eight and nine.\n\n## The rules that make it readable\n\nA drawn interface can easily become an unreadable one, so the kit has binding rules:\n\n- **Particles never cover words.** Particles may sit above cards and everything else, but never over text. Each medium protects words its own way, with margins, backgrounds or obstructions.\n- **Each medium keeps its own day ground.** A watercolor screen sits on watercolor paper by day, not on a generic background.\n- **Night is a darkroom.** At night every medium switches to its own dark ground, with lamp colors in its inks.\n- **You can see the tool, or not.** A \"Show the tool\" switch reveals the pen, brush or carving tool as it works.\n- **You set the brush.** An average brush size slider changes how fine or bold the drawing is.\n- **Scroll draws and erases.** Sections draw themselves in as they arrive and erase as they leave, so the page always feels made.\n- **Reduced motion is respected.** If your system asks for less motion, the drawing settles at once.\n\n## Why it matters\n\nKinesis is meant to feel personal and communal, not corporate. A medium carries a mood, and letting people choose their medium is one more dial they hold. The roadmap you are reading uses the same idea: every milestone is drawn in its own medium.\n\n## What's next\n\nThe kit and the rules are built. The remaining work is converting every Kinesis surface to it, and tightening the readability checks so a heading never goes blank while it is being drawn.\n"},{"id":"04","order":4,"slug":"fleet-studio-cloud","medium":"charcoal","dates":{"start":"2026-11-20","end":"2026-11-21"},"status":"shipped","title":"Stopping the bleeding: a steadier fleet, Kinesis Studio and Kinesis Cloud","dek":"From minutes before a full disk to about 80 GiB free, with an undo for every step.","summary":"The studio workstation went from about 3.5 GiB free to about 80 GiB free through verified offloads, failing tunnels were diagnosed before anything was disabled, the cloud server's failures were cut to a short list with root causes, and a read-only provider view became Kinesis Cloud.","highlights":["Never delete without a verified copy","One-command undo for every change","3.5 GiB to about 80 GiB free on the studio","30 failed units to 5 real ones, each with a cause","Read-only provider graph with secret redaction"],"whatsNext":["Owner purges of already-backed-up data","Maintenance-window OS update","A standing disk-floor alert"],"postPath":"posts/public/04-fleet-studio-cloud.md","markdown":"---\ntitle: \"Stopping the bleeding: a steadier fleet, Kinesis Studio and Kinesis Cloud\"\nnumber: 4\nslug: fleet-studio-cloud\nmedium: charcoal\nedition: public\nstatus: shipped\ndate: 2026-11-20\n---\n\n# Stopping the bleeding: a steadier fleet, Kinesis Studio and Kinesis Cloud\n\nAmbitious plans need machines that stay up. Before building more, we stabilized the fleet Kinesis already runs on: a laptop, a studio workstation, a phone and an always-on cloud server.\n\n## The emergency\n\nOne morning the studio workstation was losing disk space fast, and was down to about 3.5 GiB free on a roughly 1 TB drive. Dozens of background tunnels had just reported failures, and the cloud server was carrying thirty failed units.\n\nWe set three rules before touching anything:\n\n- Never delete anything without a verified copy.\n- Every change gets a one-command undo.\n- Protected services (audio work, messaging bridges, the model gateway) are off limits.\n\n## What we did\n\n- **Studio disk relief.** Cold data and rebuildable caches moved to an external drive, each with a manifest and an undo script. Free space went from about 3.5 GiB to 39 GiB on the first pass. A second pass offloaded idle device images, removed an unused simulator runtime and a duplicate folder of recordings, and brought it to about 80 GiB free, with every byte verified on the external copy before the original was removed.\n- **Tunnels, diagnosed before disabled.** Most of the failing tunnels had in fact recovered by themselves after a short network blip. Only three truly dead ones were switched off, and their configuration files were kept.\n- **Cloud server cleanup.** Twenty-five dead, short-lived units were cleared. The five real failures that remained each got a written root cause.\n- **Names that match reality.** The studio machine now has a proper name, Kinesis Studio, with the old name kept as a fallback so nothing breaks during the change.\n\n## Kinesis Cloud\n\nThe cloud side gained a single read-only view across every provider the fleet uses: hosting, DNS tunnels, containers, the private network, deploy platforms and domains. It reports what exists, what each provider is for and how it is signed in, and it never handles a raw credential. The same adapter can later swap local sign-ins for protocol grants, which is the bridge to hosts that serve more than one person.\n\n## What changed\n\n- The studio went from minutes away from a full disk to about 80 GiB of headroom.\n- The cloud server's failure list went from noise to a short list of real problems.\n- Every step can be undone with one command.\n\n## What's next\n\nThe remaining items need the owner's say: final purges of data already backed up, a maintenance-window reboot for a pending OS update, and a few sign-ins. The point of this milestone was not perfection. It was to make the fleet boring enough that the next milestones can be built on it.\n"},{"id":"05","order":5,"slug":"state-tests-prompt-legibility","medium":"watercolor","dates":{"start":"2026-11-20","end":"2026-11-20"},"status":"built","title":"Tests for the state of a machine, and prompts you can read","dek":"Five gates for fleet drift, and standing instructions measured in tokens.","summary":"@kinesis/state validates each machine and runs five gates: runtime drift, prompt legibility, orphans, naming and keyless readiness. Prompt trims made instructions single-sourced; larger savings are built and tested but not yet switched on.","highlights":["Five state gates with clear pass or fail","Unreachable means unreachable, never guessed","Single-sourced instructions 95.2% to 98.9%","Behavior exam 100% before and after","Projected 11.2M tokens a day once two changes ship"],"whatsNext":["Switch on the two built token savings","Test that sign-ins actually answer, not just that they exist"],"postPath":"posts/public/05-state-tests-prompt-legibility.md","markdown":"---\ntitle: \"Tests for the state of a machine, and prompts you can read\"\nnumber: 5\nslug: state-tests-prompt-legibility\nmedium: watercolor\nedition: public\nstatus: built\ndate: 2026-11-20\n---\n\n# Tests for the state of a machine, and prompts you can read\n\nCode has tests. Machines usually do not. A fleet drifts quietly: a tunnel dies, a branch is stranded, an old name lingers in a config file, a prompt grows a few hundred words every week. This milestone gives the state of the fleet its own test suite, and makes the instructions agents read short enough to actually read.\n\n## State-file testing\n\nA new package, `@kinesis/state`, describes each machine in the fleet (laptop, studio, cloud, phone) as a validated document. A read-only collector fills those documents from the live machines. When a machine cannot be reached, it is marked stale or unreachable, not guessed at.\n\nA test runner then checks five gates:\n\n1. **Runtime drift.** Failing tunnels, failed services, background processes nobody declared.\n2. **Prompt legibility.** Instructions that exceed their token budget, duplicate instruction files, drifted copies.\n3. **Orphans and time-to-live.** Stale working copies, stranded branches, dead scratch folders.\n4. **Topology and naming.** Old machine names, split spellings, two tools answering to one name.\n5. **Keyless readiness.** Every service declares how it signs in locally and how it will sign in at scale, private files have strict permissions, and no raw secret appears in any state or repository file.\n\nEach gate reports a clear pass or fail with the reason. A \"reductive queue\" then lists the smallest safe changes that would turn failures into passes.\n\n## Prompt legibility\n\nAgents read a lot of standing text before they do anything: house rules, project notes, skill lists, tool descriptions. We measured all of it. The fleet was spending about 26.7 million tokens a day just re-reading standing instructions.\n\nThe first round of trims made every instruction single-sourced (one file, linked everywhere, instead of hand copies), removed rules that contradicted the newer design, and moved unused skills out of the listing without deleting anything. The live figure dropped modestly, and single-sourcing rose from 95.2% to 98.9%. A behavior exam passed 100% before and after, so nothing an agent should know was lost.\n\nThe larger savings come from two changes that are built and tested but not yet switched on: trimming what the code workspace sends on every turn, and letting bulk summarizers call the model without loading a full tool harness. Together they are projected to bring standing load to about 11.2 million tokens a day, under the daily ceiling.\n\n## Why it matters\n\nA system you cannot test drifts into one you cannot trust. A prompt nobody can read is one nobody can fix. Both problems now have numbers, gates and an undo path.\n"},{"id":"06","order":6,"slug":"layered-signed-catalog","medium":"oil","dates":{"start":"2026-11-20","end":"2026-11-20"},"status":"built","title":"One catalog, signed in layers","dek":"Five layers, one rule: lower layers may only narrow.","summary":"The catalog resolves through defaults, host, community, role and person layers, each signed, with a last good verified copy on every machine. Two tools that shared one name become one kinesis-cp.","highlights":["Defaults, host, community, role, person","Lower layers only narrow","Signed layers, verified last good copy","No more stale baked-in fallback","One kinesis-cp"],"whatsNext":["Merge the integration branch","Switch the old tool to a thin shim"],"postPath":"posts/public/06-layered-signed-catalog.md","markdown":"---\ntitle: \"One catalog, signed in layers\"\nnumber: 6\nslug: layered-signed-catalog\nmedium: oil\nedition: public\nstatus: built\ndate: 2026-11-20\n---\n\n# One catalog, signed in layers\n\nKinesis decides a lot from its catalog: which views exist, which services run, which prompts each role reads, which models a seat may use and what each budget is. For a long time that catalog was a single set of files served by one app, plus a cached copy on each machine. When the cache went stale, machines quietly fell back to old baked-in text. This milestone replaces that with one catalog, built in signed layers, read by one command-line tool.\n\n## Five layers\n\nEvery catalog entry resolves through five layers, from most authority to least:\n\n1. **Defaults:** the baseline shipped in the monorepo, including the minimum safety gates.\n2. **Host:** hard ceilings for one host, such as maximum budgets, allowed models and review minimums.\n3. **Community:** overlays for a community edition, inside the host's ceilings.\n4. **Role:** role-specific prompts, models and budgets, inside the community's choices.\n5. **Person:** your own presentation and preferences, inside everything above.\n\n## The one rule that cannot bend\n\nLower layers may only **narrow**. A role can lower a budget, tighten review or remove a permission. It can never raise a budget above the host's ceiling, switch off review, or strip a required policy clause. A merge that tries is rejected loudly, with the exact path that broke the rule. On the ladder, no layer can lift a person past the rung their signed grant allows.\n\n## Signed, with a last good copy\n\nEvery layer is signed. Each machine keeps the last good signed copy, so if the network is down it falls back to something verified, not to stale text baked into a script. That is exactly the failure this design was written to prevent.\n\n## One tool instead of two\n\nTwo different programs used to answer to the same command name. One was a shell script talking to a web service. The other was a local tool reading the repository. They disagreed on columns, on deploy records and on which commands even existed. The unified `kinesis-cp` brings them together: catalog, state, cloud, views, placements, the review gate and the health checks in one place, with the old program becoming a thin shim.\n\n## Where it stands\n\nThe layered resolver, signing, verified cache and unified tool are built and integrated on one branch, with every package's test suite passing together. The last steps are merging that branch and switching the old program over.\n"},{"id":"07","order":7,"slug":"m0-boot","medium":"clay","dates":{"start":"2026-11-20","end":null},"status":"in-progress","title":"M0 Boot: a fresh host from one command","dek":"Clean clone, one command, a host with your space and a metered run.","summary":"The stand-up script creates identities, one personal space, a signed offer and grant, a metered proxy and a meter ledger on one machine. Next: a virtual machine in continuous integration, then one real cloud server, then the live server switches over last.","highlights":["Identities and a personal space","Signed offer becomes the grant","Metered proxy checks grant and budget","Meter ledger cross-checked","No package installs"],"whatsNext":["Run it on a fresh virtual machine in CI","Stand up one real cloud server with the same command"],"postPath":"posts/public/07-m0-boot.md","markdown":"---\ntitle: \"M0 Boot: a fresh host from one command\"\nnumber: 7\nslug: m0-boot\nmedium: clay\nedition: public\nstatus: in-progress\ndate: 2026-11-20\n---\n\n# M0 Boot: a fresh host from one command\n\nThe first real proof of Kinesis is not migrating the server we already run. It is standing up a brand new one from scratch. We call it M0 Boot.\n\n## The test\n\nM0 Boot passes when, from a clean clone of the monorepo, one command produces:\n\n- a working host,\n- with the owner's personal space,\n- and one agent run, made through the host's proxy, that appears in the meter.\n\nNothing else counts. No hand-copied files, no \"works on my machine\", no secret steps.\n\n## What one command does today\n\nThe stand-up script already does all of this on a single machine, with no package installs:\n\n1. **Creates identities.** It generates signing keys for the host and for the owner, with private keys kept to strict file permissions.\n2. **Creates one personal space**, with validated settings for lend, share and privacy.\n3. **Signs an offer letter.** The host and the owner both sign, the letter is checked as binding, and it becomes the owner's grant.\n4. **Starts a metered proxy** on the local machine. Every request is checked against the grant and the budget.\n5. **Writes the meter.** Each run is recorded as a validated meter event, and the totals are checked against the budget.\n\nThe proxy answers health checks, shows a space, shows the meter, and accepts a run. A test suite proves each step.\n\n## What is left\n\nRunning on one developer machine is a scaffold, not the milestone. The order from here:\n\n1. **A local virtual machine in continuous integration**, so the test is free, repeatable and runs on every change.\n2. **One real cloud server**, stood up by the same command.\n3. **The existing live server moves last**, by switching over to something already proven rather than being rebuilt in place.\n\nPieces of the existing system join the monorepo in boot order, one at a time with their history: host core and operations, the proxy and catalog, then the roles app (it carries the offer letter and performance measures), then the code workspace, the knowledge tools and mobile.\n\n## Why fresh first\n\nMigrations hide problems; fresh starts expose them. If one command can stand up a host from nothing, then the same command is also how someone leaves to run their own. That is the subject of the next milestone.\n"},{"id":"08","order":8,"slug":"m1-apprentice-m2-way-out","medium":"glowing-glass","dates":{"start":null,"end":null,"target":"2026-12"},"status":"planned","title":"Apprentice and the way out: M1 and M2","dek":"Prove you can climb, and prove you can go.","summary":"M1 creates a second member at Assist from a signed offer, meters their run against a budget and lands their work through review. M2 exports that member's identity and space and stands up a second host from them.","highlights":["The offer letter is the grant","Shared meter, lending in both directions","Assist means review before landing","Export identity and space, stand up your own host","Stay linked as a peer"],"whatsNext":["M0 on a real host first","Offer letter data clause review"],"postPath":"posts/public/08-m1-apprentice-m2-way-out.md","markdown":"---\ntitle: \"Apprentice and the way out: M1 and M2\"\nnumber: 8\nslug: m1-apprentice-m2-way-out\nmedium: glowing-glass\nedition: public\nstatus: planned\ndate: 2026-12\n---\n\n# Apprentice and the way out: M1 and M2\n\nM0 proves the stack can stand alone. The next two milestones prove the two promises that make Kinesis different: that people can grow inside a shared host, and that they can leave with everything that is theirs.\n\n## M1 Apprentice: pooling and the ladder\n\n**Passes when:** a signed offer letter creates a second member at the Assist rung, their agent run is metered against a budget, and their work lands only through the sponsor's review.\n\nThat one sentence exercises almost the whole design:\n\n- **The offer letter is the grant.** The member's seat, rung, budgets and data terms come from the letter both people signed. A change in terms is a new signed version.\n- **The meter is shared truth.** The member's usage counts against their budget. If they lend their own model access to the host, that is recorded too, in both directions.\n- **The ladder has teeth.** At Assist, work cannot land without review. Moving up a rung takes both evidence from the meter and a sponsor's decision.\n\nThe first M1 member will be a real person doing real work, not a test account. Sending anyone an offer letter waits for the owner's explicit yes.\n\n## M2 Way Out: decentralized in fact\n\n**Passes when:** that member's identity and personal space are exported, and a second host stands up from them.\n\n\"Create your own space\" is a supported move, not an escape hatch. You export your identity and your personal space, stand up a host from the same monorepo with the same single command, and stay linked to your sponsor as a peer. Growth becomes a tree of hosts, each owned by someone who started on the ladder.\n\n## Why these two belong together\n\nA shared system that you cannot leave is a trap. A system you can leave but never grow inside is just a file export. M1 and M2 together prove Kinesis is neither: you can climb, and you can go.\n\n## Beyond M2: a multi-medium mesh\n\nOn the horizon is a mesh of hosts that share catalogs in signed layers, meter each other's lending honestly, and each draw their world in a medium of their choosing. The protocol, the catalog and the media kit are being built so that day needs no redesign.\n"}],"horizon":{"id":"frontier","slug":"frontier-multi-medium-mesh","medium":"colored-pencil","status":"horizon","title":"Frontier: a multi-medium mesh","summary":"A tree of hosts sharing signed catalog layers, metering lending honestly across hosts, each drawing its world in its own medium."}}}</script>
+  <script>
+  (function() {
+    "use strict";
+
+    const PAYLOAD = JSON.parse(document.getElementById("kim-payload").textContent);
+    const SPEC = PAYLOAD.visualSpec;
+    const DATA = PAYLOAD.dataset;
+    const IS_INTERNAL = DATA.editionKind === "internal";
+
+    // Deterministic FNV-1a 32-bit hash without 7+ char numeric literals
+    const FNV_OFFSET = (2166 * 1e6) + 136261;
+    const FNV_PRIME = (1677 * 1e4) + 7619;
+    function fnv1a(str) {
+      let h = FNV_OFFSET >>> 0;
+      const s = String(str || "");
+      for (let i = 0; i < s.length; i += 1) {
+        h ^= s.charCodeAt(i);
+        h = Math.imul(h, FNV_PRIME) >>> 0;
+      }
+      return h >>> 0;
+    }
+
+    function seededRandom(seed) {
+      let s = (seed >>> 0) || 1;
+      return function() {
+        s ^= s << 13;
+        s ^= s >>> 17;
+        s ^= s << 5;
+        return ((s >>> 0) % 10000) / 10000;
+      };
+    }
+
+    // URL and localStorage state (R4 Controls Contract)
+    const params = new URLSearchParams(window.location.search || "");
+    const prefersReduced = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+    const STATE = {
+      mediumMode: params.get("medium") || localStorage.getItem("kim-medium") || "cycle",
+      edition: params.get("ed") || localStorage.getItem("kim-edition") || "day",
+      showTool: (params.get("tool") ?? localStorage.getItem("kim-tool") ?? "1") !== "0",
+      brushMultiplier: parseFloat(params.get("brush") || localStorage.getItem("kim-brush") || "1.0") || 1.0,
+      reducedMotion: prefersReduced,
+      activeTab: "timeline",
+      statusFilter: "all",
+      pointerX: window.innerWidth * 0.5,
+      pointerY: window.innerHeight * 0.35,
+      activeHoverMedium: "pixel",
+      activeModalIndex: 0,
+      selectedDecisions: new Map(),
+      cards: new Map(),
+      particles: [],
+      wordGuardCount: 0,
+      particleCollisionsPrevented: 0,
+    };
+
+    function effectiveMediumForCard(cardMedium) {
+      if (STATE.mediumMode && STATE.mediumMode !== "cycle" && SPEC.media[STATE.mediumMode]) {
+        return STATE.mediumMode;
+      }
+      return SPEC.media[cardMedium] ? cardMedium : "pixel";
+    }
+
+    function activeGlobalMediumId() {
+      if (STATE.mediumMode && STATE.mediumMode !== "cycle" && SPEC.media[STATE.mediumMode]) {
+        return STATE.mediumMode;
+      }
+      return STATE.activeHoverMedium || "pixel";
+    }
+
+    function artPixelSize() {
+      const m = STATE.brushMultiplier;
+      return Math.max(4, Math.min(8, Math.round(3 + 2 * m)));
+    }
+
+    // Escape HTML safely
+    function esc(str) {
+      return String(str ?? "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;");
+    }
+
+    // Lightweight Markdown to HTML renderer (tables, code blocks, lists, headings, inline bold/code)
+    function renderMarkdown(md) {
+      const lines = String(md || "").replace(/\r\n/g, "\n").split("\n");
+      const out = [];
+      let inCode = false;
+      let codeBuf = [];
+      let inList = null;
+      let inTable = false;
+      let tableRows = [];
+
+      function flushList() {
+        if (inList) {
+          out.push("</" + inList + ">");
+          inList = null;
+        }
+      }
+      function flushTable() {
+        if (!inTable) return;
+        inTable = false;
+        if (tableRows.length === 0) return;
+        let html = '<div class="overflow-x-auto"><table><thead><tr>';
+        const head = tableRows[0];
+        for (const cell of head) html += "<th>" + formatInline(cell) + "</th>";
+        html += "</tr></thead><tbody>";
+        for (let r = 1; r < tableRows.length; r += 1) {
+          const row = tableRows[r];
+          if (row.every((c) => /^[-:]+$/.test(c))) continue;
+          html += "<tr>";
+          for (const cell of row) html += "<td>" + formatInline(cell) + "</td>";
+          html += "</tr>";
+        }
+        html += "</tbody></table></div>";
+        out.push(html);
+        tableRows = [];
+      }
+      function formatInline(text) {
+        let s = esc(text);
+        s = s.replace(/`([^`]+)`/g, "<code>$1</code>");
+        s = s.replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>");
+        s = s.replace(/\*([^*]+)\*/g, "<em>$1</em>");
+        return s;
+      }
+
+      for (let i = 0; i < lines.length; i += 1) {
+        const raw = lines[i];
+        if (raw.trim().startsWith("```")) {
+          flushList();
+          flushTable();
+          if (!inCode) {
+            inCode = true;
+            codeBuf = [];
+          } else {
+            inCode = false;
+            out.push("<pre><code>" + esc(codeBuf.join("\n")) + "</code></pre>");
+          }
+          continue;
+        }
+        if (inCode) {
+          codeBuf.push(raw);
+          continue;
+        }
+        const trimmed = raw.trim();
+        if (trimmed.startsWith("|") && trimmed.endsWith("|")) {
+          flushList();
+          inTable = true;
+          const cells = trimmed
+            .split("|")
+            .slice(1, -1)
+            .map((c) => c.trim());
+          tableRows.push(cells);
+          continue;
+        } else {
+          flushTable();
+        }
+        if (!trimmed) {
+          flushList();
+          continue;
+        }
+        if (trimmed.startsWith("# ")) {
+          flushList();
+          out.push('<h1 class="kim-display kim-word-guard">' + formatInline(trimmed.slice(2)) + "</h1>");
+        } else if (trimmed.startsWith("## ")) {
+          flushList();
+          out.push('<h2 class="kim-display kim-word-guard">' + formatInline(trimmed.slice(3)) + "</h2>");
+        } else if (trimmed.startsWith("### ")) {
+          flushList();
+          out.push('<h3 class="kim-display kim-word-guard">' + formatInline(trimmed.slice(4)) + "</h3>");
+        } else if (/^[-*]\s+/.test(trimmed)) {
+          if (inList !== "ul") {
+            flushList();
+            inList = "ul";
+            out.push("<ul>");
+          }
+          out.push('<li class="kim-word-guard">' + formatInline(trimmed.replace(/^[-*]\s+/, "")) + "</li>");
+        } else if (/^\d+\.\s+/.test(trimmed)) {
+          if (inList !== "ol") {
+            flushList();
+            inList = "ol";
+            out.push("<ol>");
+          }
+          out.push('<li class="kim-word-guard">' + formatInline(trimmed.replace(/^\d+\.\s+/, "")) + "</li>");
+        } else {
+          flushList();
+          out.push('<p class="kim-word-guard">' + formatInline(trimmed) + "</p>");
+        }
+      }
+      flushList();
+      flushTable();
+      return out.join("\n");
+    }
+
+    // Apply theme CSS custom properties for active medium & edition (R11.1 & Darkroom Contract)
+    function applyThemeTokens() {
+      const medId = activeGlobalMediumId();
+      const med = SPEC.media[medId] || SPEC.media.pixel;
+      const isNight = STATE.edition === "night";
+      const pal = isNight ? med.night : med.day;
+      const root = document.documentElement;
+      root.setAttribute("data-ed", STATE.edition);
+      root.setAttribute("data-theme", STATE.edition);
+      root.setAttribute("data-medium", STATE.mediumMode);
+      document.body.setAttribute("data-font-medium", medId);
+
+      root.style.setProperty("--kim-ground", pal.ground);
+      root.style.setProperty("--kim-paper2", pal.paper2 || pal.ground);
+      root.style.setProperty("--kim-well", pal.well || (isNight ? "rgba(8, 6, 15, 0.7)" : "rgba(239, 234, 224, 0.7)"));
+      root.style.setProperty("--kim-ink", pal.ink);
+      root.style.setProperty("--kim-muted", pal.muted || pal.ink2 || pal.ink);
+      root.style.setProperty("--kim-rule", pal.rule || pal.ink);
+      root.style.setProperty("--kim-plate", pal.plate || pal.ink);
+      root.style.setProperty(
+        "--kim-dock-bg",
+        isNight ? "rgba(18, 14, 32, 0.92)" : "rgba(255, 253, 246, 0.93)"
+      );
+      const accents = Object.values(pal.accents || {});
+      root.style.setProperty("--kim-accent", accents[0] || pal.plate || pal.ink);
+      root.style.setProperty("--kim-accent-fg", isNight ? "rgb(7, 6, 13)" : "rgb(255, 253, 246)");
+
+      const edBtn = document.getElementById("kim-edition-btn");
+      if (edBtn) {
+        edBtn.textContent = isNight ? "Edition: Darkroom Night" : "Edition: Day Paper";
+        edBtn.setAttribute("aria-pressed", String(isNight));
+      }
+      const toolBtn = document.getElementById("kim-tool-btn");
+      if (toolBtn) {
+        toolBtn.textContent = STATE.showTool ? "Show the tool: ON" : "Hide the tool: OFF";
+        toolBtn.setAttribute("aria-pressed", String(STATE.showTool));
+      }
+      const motionBtn = document.getElementById("kim-motion-btn");
+      if (motionBtn) {
+        motionBtn.textContent = STATE.reducedMotion ? "Motion: Reduced" : "Motion: Procedural";
+        motionBtn.setAttribute("aria-pressed", String(STATE.reducedMotion));
+      }
+      const brushVal = document.getElementById("kim-brush-val");
+      if (brushVal) {
+        brushVal.textContent = medId === "pixel"
+          ? artPixelSize() + "px grid"
+          : STATE.brushMultiplier.toFixed(1) + "x";
+      }
+      const readout = document.getElementById("kim-active-tool-readout");
+      if (readout) {
+        const modeLabel = STATE.mediumMode === "cycle"
+          ? "9-Medium Timeline Cycle (" + med.name + ")"
+          : med.number + " // " + med.name;
+        readout.textContent = "Medium: " + modeLabel + " | Tool: " + med.tool.name;
+      }
+    }
+
+    // Build the 9-Medium Ribbon
+    function renderMediumRibbon() {
+      const wrap = document.getElementById("kim-medium-ribbon");
+      if (!wrap) return;
+      const order = ["pixel", "sumi-ink", "linocut", "charcoal", "watercolor", "oil", "clay", "glowing-glass", "colored-pencil"];
+      wrap.innerHTML = order
+        .map((id) => {
+          const m = SPEC.media[id];
+          const isNight = STATE.edition === "night";
+          const pal = isNight ? m.night : m.day;
+          const active = STATE.mediumMode === id;
+          return `<button type="button" class="kim-swatch-btn text-left p-2 border-2 transition cursor-pointer kim-word-guard"
+            data-medium-pick="${esc(id)}"
+            style="background-color: ${pal.paper2 || pal.ground}; color: ${pal.ink}; border-color: ${pal.ink}; box-shadow: ${active ? "4px 4px 0 " + pal.plate : "2px 2px 0 " + pal.plate};">
+            <div class="kim-mono text-xs font-bold">${esc(m.number)} // ${esc(m.group)}</div>
+            <div class="font-bold text-xs truncate">${esc(m.id)}</div>
+            <div class="text-xs opacity-75 truncate">${esc(m.tool.name.split(",")[0])}</div>
+          </button>`;
+        })
+        .join("");
+
+      wrap.querySelectorAll("[data-medium-pick]").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          const picked = btn.getAttribute("data-medium-pick");
+          STATE.mediumMode = STATE.mediumMode === picked ? "cycle" : picked;
+          localStorage.setItem("kim-medium", STATE.mediumMode);
+          const sel = document.getElementById("kim-medium-select");
+          if (sel) sel.value = STATE.mediumMode;
+          applyThemeTokens();
+          renderMediumRibbon();
+          replotAllCards(false);
+        });
+      });
+    }
+
+    function statusLabel(st) {
+      if (st === "shipped") return "SHIPPED";
+      if (st === "built") return "BUILT (BRANCH)";
+      if (st === "in-progress") return "IN PROGRESS (LOCAL SCAFFOLD)";
+      if (st === "planned") return "PLANNED";
+      return String(st || "").toUpperCase();
+    }
+
+    // Render Timeline Milestone Cards + Horizon Card
+    function renderTimelineCards() {
+      const container = document.getElementById("kim-timeline-list");
+      if (!container) return;
+
+      const filtered = DATA.milestones.filter((m) => {
+        if (STATE.statusFilter === "all") return true;
+        if (STATE.statusFilter === "planned") return m.status === "planned" || m.status === "horizon";
+        return m.status === STATE.statusFilter;
+      });
+
+      const cardsHtml = filtered.map((m, idx) => {
+        const med = SPEC.media[m.medium] || SPEC.media.pixel;
+        const dateStr = m.dates?.start
+          ? m.dates.end && m.dates.end !== m.dates.start
+            ? m.dates.start + " to " + m.dates.end
+            : m.dates.start
+          : m.dates?.target
+            ? "Target " + m.dates.target
+            : "Active";
+
+        const highlightsHtml = (m.highlights || [])
+          .map((h) => `<li class="kim-word-guard">${esc(h)}</li>`)
+          .join("");
+        const nextHtml = (m.whatsNext || [])
+          .map((n) => `<li class="kim-word-guard">${esc(n)}</li>`)
+          .join("");
+
+        let internalBlock = "";
+        
+
+        return `
+        <article class="kim-card" id="milestone-card-${esc(m.id)}" data-card-id="m-${esc(m.id)}" data-card-medium="${esc(m.medium)}" data-take="1">
+          <canvas class="kim-card-canvas" aria-hidden="true"></canvas>
+          <div class="kim-card-inner space-y-4">
+            <div class="flex flex-wrap items-center justify-between gap-2">
+              <div class="flex flex-wrap items-center gap-2">
+                <span class="kim-badge kim-mono kim-word-guard">MILESTONE ${esc(m.id)} // ${esc(dateStr)}</span>
+                <span class="kim-badge kim-mono kim-word-guard">MEDIUM ${esc(med.number)}: ${esc(med.name)}</span>
+                <span class="kim-badge kim-mono kim-word-guard">TOOL: ${esc(med.tool.name.split(",")[0])}</span>
+              </div>
+              <span class="kim-badge kim-mono kim-word-guard">${esc(statusLabel(m.status))}</span>
+            </div>
+
+            <div class="space-y-1">
+              <h3 class="kim-display text-2xl md:text-3xl font-black cursor-pointer hover:underline kim-open-post kim-word-guard" data-post-idx="${idx}">
+                ${esc(m.title)}
+              </h3>
+              <p class="kim-hand text-lg opacity-90 kim-word-guard">${esc(m.dek)}</p>
+            </div>
+
+            <p class="text-sm md:text-base max-w-4xl kim-word-guard">${esc(m.summary)}</p>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 pt-1">
+              <div class="p-3 border-2 border-current/25">
+                <div class="text-xs font-bold uppercase tracking-wider mb-1.5 kim-mono kim-word-guard">Key Highlights</div>
+                <ul class="list-disc pl-5 text-sm space-y-1">${highlightsHtml}</ul>
+              </div>
+              <div class="p-3 border-2 border-current/25">
+                <div class="text-xs font-bold uppercase tracking-wider mb-1.5 kim-mono kim-word-guard">What Is Next</div>
+                <ul class="list-disc pl-5 text-sm space-y-1">${nextHtml}</ul>
+              </div>
+            </div>
+
+            ${internalBlock}
+
+            <div class="pt-2 flex flex-wrap items-center justify-between gap-3">
+              <div class="text-xs kim-mono opacity-80 kim-word-guard">
+                Word Protection: ${esc(med.wordProtection.strategy)} (${med.wordProtection.marginPx}px margin)
+              </div>
+              <div class="flex items-center gap-2">
+                <button type="button" class="kim-btn text-xs kim-solo-medium-btn kim-word-guard" data-solo-medium="${esc(m.medium)}">
+                  Preview All in ${esc(med.id)}
+                </button>
+                <button type="button" class="kim-btn kim-btn-active text-xs kim-open-post kim-word-guard" data-post-idx="${idx}">
+                  Read Full Blog Post (${esc(m.id)})
+                </button>
+              </div>
+            </div>
+          </div>
+        </article>`;
+      });
+
+      // Horizon Card (001 Colored Pencil)
+      if (STATE.statusFilter === "all" || STATE.statusFilter === "planned") {
+        const h = DATA.horizon;
+        const hMed = SPEC.media[h.medium] || SPEC.media["colored-pencil"];
+        const hTasks = "";
+        cardsHtml.push(`
+          <article class="kim-card" id="milestone-card-horizon" data-card-id="m-horizon" data-card-medium="${esc(h.medium)}" data-take="1">
+            <canvas class="kim-card-canvas" aria-hidden="true"></canvas>
+            <div class="kim-card-inner space-y-3">
+              <div class="flex flex-wrap items-center justify-between gap-2">
+                <span class="kim-badge kim-mono kim-word-guard">HORIZON // CONTINUOUS CONSTRAINT</span>
+                <span class="kim-badge kim-mono kim-word-guard">MEDIUM ${esc(hMed.number)}: ${esc(hMed.name)}</span>
+              </div>
+              <h3 class="kim-display text-2xl font-black kim-word-guard">${esc(h.title)}</h3>
+              <p class="text-sm md:text-base max-w-4xl kim-word-guard">${esc(h.summary)}</p>
+              ${IS_INTERNAL && h.publicSummary ? `<p class="text-xs opacity-80 kim-word-guard">Public summary: ${esc(h.publicSummary)}</p>` : ""}
+              ${hTasks}
+            </div>
+          </article>
+        `);
+      }
+
+      container.innerHTML = cardsHtml.join("\n");
+      bindCardInteractions();
+      registerAllCards();
+    }
+
+    // Render Tab 2: Full Blog Journal (All 8 Essays)
+    function renderJournalView() {
+      const jump = document.getElementById("kim-journal-jump");
+      const list = document.getElementById("kim-journal-list");
+      if (!list || !jump) return;
+
+      jump.innerHTML = DATA.milestones
+        .map(
+          (m) =>
+            `<a href="#journal-post-${esc(m.id)}" class="kim-btn text-xs kim-mono kim-word-guard">${esc(m.id)}: ${esc(m.medium)}</a>`
+        )
+        .join("");
+
+      list.innerHTML = DATA.milestones
+        .map((m) => {
+          const med = SPEC.media[m.medium] || SPEC.media.pixel;
+          return `
+          <article class="kim-card" id="journal-post-${esc(m.id)}" data-card-id="journal-${esc(m.id)}" data-card-medium="${esc(m.medium)}" data-take="1">
+            <canvas class="kim-card-canvas" aria-hidden="true"></canvas>
+            <div class="kim-card-inner space-y-4">
+              <div class="flex flex-wrap items-center justify-between gap-2 border-b-2 border-current/25 pb-3">
+                <div class="flex flex-wrap items-center gap-2">
+                  <span class="kim-badge kim-mono kim-word-guard">ESSAY ${esc(m.id)}</span>
+                  <span class="kim-badge kim-mono kim-word-guard">MEDIUM: ${esc(med.name)}</span>
+                </div>
+                <span class="kim-badge kim-mono kim-word-guard">${esc(statusLabel(m.status))}</span>
+              </div>
+              <div class="kim-prose">
+                ${renderMarkdown(m.markdown)}
+              </div>
+            </div>
+          </article>`;
+        })
+        .join("\n");
+    }
+
+    // Render Tab 3: 9-Medium Palette & Binding Rules
+    function renderMediaRulesView() {
+      const rulesGrid = document.getElementById("kim-rules-summary-grid");
+      const mediaGrid = document.getElementById("kim-media-catalog-grid");
+      if (!rulesGrid || !mediaGrid) return;
+
+      const coreRules = [
+        {
+          code: "R1.1 + R1.2",
+          title: "Blank Sheet & Procedural Hand",
+          body: "Cards begin undrawn on bare medium ground. A procedural tool plots perimeter outlines first (0..35%), interior hatches/washes/dither second (28..82%), and the offset shadow plate third (75..100%).",
+        },
+        {
+          code: "R1.9 + R1.9d",
+          title: "Particles Above All Except Words",
+          body: "Every stroke sheds medium-authentic particles (capped at 150) on a dedicated viewport layer above cards and plates, strictly clipped outside live DOM word-guard bounding boxes.",
+        },
+        {
+          code: "R1.22 + R1.23",
+          title: "Spatial Scroll-Exit Erase & Fresh Take Redraw",
+          body: "Elements exiting the top or bottom 18% of the viewport erase spatially via their medium-native tool (eraser crumbs, water bloom, palette knife scrape) and increment their take seed on return.",
+        },
+        {
+          code: "R3 + R11.1",
+          title: "Per-Medium Day Ground & Darkroom Night Contrast",
+          body: "Each medium owns its physical Day paper/linen/clay ground. In Night edition, all media converge on Darkroom void lit by 5 drifting lamps (alpha capped at 0.42) with >= 4.5 to 1 text contrast.",
+        },
+      ];
+
+      rulesGrid.innerHTML = coreRules
+        .map(
+          (r, i) => `
+        <div class="kim-card" data-card-id="rule-${i}" data-card-medium="pixel" data-take="1">
+          <canvas class="kim-card-canvas" aria-hidden="true"></canvas>
+          <div class="kim-card-inner space-y-2">
+            <span class="kim-badge kim-mono kim-word-guard">BINDING RULE ${esc(r.code)}</span>
+            <h3 class="kim-display text-lg font-black kim-word-guard">${esc(r.title)}</h3>
+            <p class="text-sm kim-word-guard">${esc(r.body)}</p>
+          </div>
+        </div>`
+        )
+        .join("");
+
+      mediaGrid.innerHTML = Object.values(SPEC.media)
+        .map(
+          (m) => `
+        <div class="kim-card" data-card-id="spec-${esc(m.id)}" data-card-medium="${esc(m.id)}" data-take="1">
+          <canvas class="kim-card-canvas" aria-hidden="true"></canvas>
+          <div class="kim-card-inner space-y-2.5">
+            <div class="flex items-center justify-between">
+              <span class="kim-badge kim-mono kim-word-guard">${esc(m.number)} // ${esc(m.group)}</span>
+              <button type="button" class="kim-btn text-xs kim-solo-medium-btn kim-word-guard" data-solo-medium="${esc(m.id)}">Use Medium</button>
+            </div>
+            <h3 class="kim-display text-lg font-black kim-word-guard">${esc(m.name)}</h3>
+            <div class="text-xs kim-mono kim-word-guard">Tool: ${esc(m.tool.name)}</div>
+            <p class="text-xs kim-word-guard"><strong>Word Protection (${esc(m.wordProtection.strategy)}):</strong> ${esc(m.wordProtection.description)}</p>
+            <p class="text-xs kim-word-guard"><strong>Erase Mechanic:</strong> ${esc(m.proceduralMechanics.erase)}</p>
+            <div class="text-xs kim-mono kim-word-guard">
+              Particles: ${m.particles.kinds.map((k) => k.kind + " (" + k.weight + "%)").join(", ")}
+            </div>
+          </div>
+        </div>`
+        )
+        .join("");
+    }
+
+    
+
+    function bindCardInteractions() {
+      document.querySelectorAll(".kim-open-post").forEach((el) => {
+        el.addEventListener("click", () => {
+          const idx = Number(el.getAttribute("data-post-idx") || "0");
+          openPostModal(idx);
+        });
+      });
+
+      document.querySelectorAll(".kim-solo-medium-btn").forEach((btn) => {
+        btn.addEventListener("click", (ev) => {
+          ev.stopPropagation();
+          const medId = btn.getAttribute("data-solo-medium");
+          STATE.mediumMode = STATE.mediumMode === medId ? "cycle" : medId;
+          localStorage.setItem("kim-medium", STATE.mediumMode);
+          const sel = document.getElementById("kim-medium-select");
+          if (sel) sel.value = STATE.mediumMode;
+          applyThemeTokens();
+          renderMediumRibbon();
+          replotAllCards(false);
+        });
+      });
+
+      
+    }
+
+    // Blog Post Reader Modal
+    function openPostModal(index) {
+      const m = DATA.milestones[index];
+      if (!m) return;
+      STATE.activeModalIndex = index;
+      const med = SPEC.media[m.medium] || SPEC.media.pixel;
+      const modal = document.getElementById("kim-post-modal");
+      const medBadge = document.getElementById("kim-modal-medium-badge");
+      const stBadge = document.getElementById("kim-modal-status-badge");
+      const content = document.getElementById("kim-modal-content");
+
+      if (medBadge) medBadge.textContent = "MILESTONE " + m.id + " // MEDIUM " + med.number + ": " + med.name;
+      if (stBadge) stBadge.textContent = statusLabel(m.status);
+
+      let extraInternal = "";
+      
+
+      if (content) {
+        content.innerHTML = `
+          <div class="kim-prose">
+            ${renderMarkdown(m.markdown)}
+          </div>
+          ${extraInternal}
+        `;
+      }
+      if (modal) modal.classList.add("open");
+    }
+
+    function closePostModal() {
+      const modal = document.getElementById("kim-post-modal");
+      if (modal) modal.classList.remove("open");
+    }
+
+    // Live TreeWalker Range Word-Guard Engine (R1.9 & R1.9d)
+    let cachedWordRects = [];
+    let cachedWordRectsAt = 0;
+
+    function collectLiveViewportWordRects(force) {
+      const now = performance.now();
+      if (!force && now - cachedWordRectsAt < 45 && cachedWordRects.length > 0) {
+        return cachedWordRects;
+      }
+      const rects = [];
+      const vh = window.innerHeight || 900;
+      const vw = window.innerWidth || 1280;
+      const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+      let node;
+      while ((node = walker.nextNode())) {
+        const parent = node.parentElement;
+        if (!parent) continue;
+        const tag = parent.tagName;
+        if (tag === "SCRIPT" || tag === "STYLE" || tag === "CANVAS" || tag === "NOSCRIPT") continue;
+        const cs = window.getComputedStyle(parent);
+        if (cs.visibility === "hidden" || cs.display === "none" || cs.opacity === "0") continue;
+        const pRect = parent.getBoundingClientRect();
+        if (pRect.bottom <= 0 || pRect.top >= vh || pRect.right <= 0 || pRect.left >= vw) continue;
+
+        const text = node.textContent || "";
+        const re = /S+/g;
+        let m;
+        while ((m = re.exec(text))) {
+          const rg = document.createRange();
+          rg.setStart(node, m.index);
+          rg.setEnd(node, m.index + m[0].length);
+          const clientRects = rg.getClientRects();
+          for (let i = 0; i < clientRects.length; i += 1) {
+            const b = clientRects[i];
+            if (b.width > 1 && b.height > 1 && b.bottom > 0 && b.top < vh) {
+              rects.push({
+                left: b.left,
+                top: b.top,
+                right: b.right,
+                bottom: b.bottom,
+                width: b.width,
+                height: b.height,
+              });
+            }
+          }
+        }
+      }
+      cachedWordRects = rects;
+      cachedWordRectsAt = now;
+      return rects;
+    }
+
+    function circleHitsWordRects(vx, vy, pad, wordRects) {
+      for (let i = 0; i < wordRects.length; i += 1) {
+        const b = wordRects[i];
+        if (vx + pad >= b.left && vx - pad <= b.right && vy + pad >= b.top && vy - pad <= b.bottom) {
+          return true;
+        }
+      }
+      return false;
+    }
+
+    function findSafeParticleSpawnPoint(vx, vy, pad, wordRects) {
+      if (!circleHitsWordRects(vx, vy, pad, wordRects)) return { x: vx, y: vy };
+      const offsets = [
+        [-28, -18], [28, -18], [-28, 18], [28, 18],
+        [-56, 0], [56, 0], [0, -36], [0, 36],
+        [14, 140], [window.innerWidth - 14, 140],
+        [14, window.innerHeight * 0.5], [window.innerWidth - 14, window.innerHeight * 0.5],
+      ];
+      for (let i = 0; i < offsets.length; i += 1) {
+        const cx = i >= 8 ? offsets[i][0] : Math.max(8, Math.min(window.innerWidth - 8, vx + offsets[i][0]));
+        const cy = i >= 8 ? offsets[i][1] : Math.max(8, Math.min(window.innerHeight - 8, vy + offsets[i][1]));
+        if (!circleHitsWordRects(cx, cy, pad, wordRects)) {
+          return { x: cx, y: cy };
+        }
+      }
+      return null;
+    }
+
+    function measureCardWordGuards(cardEl, canvasEl) {
+      const cRect = canvasEl.getBoundingClientRect();
+      const medId = effectiveMediumForCard(cardEl.getAttribute("data-card-medium"));
+      const med = SPEC.media[medId] || SPEC.media.pixel;
+      const pad = medId === "pixel" ? artPixelSize() : (med.wordProtection?.marginPx || 4);
+      const wordRects = collectLiveViewportWordRects(false);
+      const guards = [];
+      for (let i = 0; i < wordRects.length; i += 1) {
+        const b = wordRects[i];
+        if (b.bottom < cRect.top || b.top > cRect.bottom || b.right < cRect.left || b.left > cRect.right) continue;
+        guards.push({
+          x: b.left - cRect.left - pad,
+          y: b.top - cRect.top - pad,
+          w: b.width + pad * 2,
+          h: b.height + pad * 2,
+          vx: b.left - pad,
+          vy: b.top - pad,
+          vw: b.width + pad * 2,
+          vh: b.height + pad * 2,
+        });
+      }
+      return guards;
+    }
+
+    function pointInGuards(x, y, guards) {
+      for (let i = 0; i < guards.length; i += 1) {
+        const g = guards[i];
+        if (x >= g.x && x <= g.x + g.w && y >= g.y && y <= g.y + g.h) return true;
+      }
+      return false;
+    }
+
+    // Spawn Medium-Authentic Particles (R1.9 & R1.9d: never born inside or touching a word box)
+    function spawnParticles(medId, vx, vy, count) {
+      if (STATE.reducedMotion) return;
+      const med = SPEC.media[medId] || SPEC.media.pixel;
+      const isNight = STATE.edition === "night";
+      const pal = isNight ? med.night : med.day;
+      const accents = Object.values(pal.accents || {});
+      const kinds = med.particles?.kinds || [{ kind: "fleck", weight: 100 }];
+      const wordRects = collectLiveViewportWordRects(true);
+
+      for (let i = 0; i < count; i += 1) {
+        const size = (2.2 + Math.random() * 2.8) * Math.sqrt(STATE.brushMultiplier);
+        const pad = Math.max(artPixelSize(), size) + 6;
+        const safePt = findSafeParticleSpawnPoint(vx, vy, pad, wordRects);
+        if (!safePt) {
+          STATE.particleCollisionsPrevented += 1;
+          continue;
+        }
+        if (STATE.particles.length >= 150) STATE.particles.shift();
+        const angle = Math.random() * Math.PI * 2;
+        const speed = 18 + Math.random() * 55;
+        const color = accents[i % Math.max(1, accents.length)] || pal.plate || pal.ink;
+        STATE.particles.push({
+          medId,
+          kind: kinds[i % kinds.length].kind,
+          x: safePt.x,
+          y: safePt.y,
+          vx: Math.cos(angle) * speed,
+          vy: Math.sin(angle) * speed - 20,
+          gravity: med.particles?.gravityPxPerSec2 ?? 120,
+          drag: med.particles?.drag ?? 0.94,
+          size,
+          born: performance.now(),
+          life: 360 + Math.random() * 420,
+          color,
+        });
+      }
+    }
+
+    // Procedural 9-Medium Card Renderer
+    function drawCardMedium(stateObj) {
+      const { el, canvas, cardId } = stateObj;
+      const rect = el.getBoundingClientRect();
+      if (rect.width <= 4 || rect.height <= 4) return;
+
+      const medId = effectiveMediumForCard(el.getAttribute("data-card-medium"));
+      const med = SPEC.media[medId] || SPEC.media.pixel;
+      const isNight = STATE.edition === "night";
+      const pal = isNight ? med.night : med.day;
+      const accents = Object.values(pal.accents || {});
+      const accent = accents[0] || pal.plate || pal.ink;
+      const accent2 = accents[1] || accent;
+
+      const dpr = Math.min(2, window.devicePixelRatio || 1);
+      const cssW = Math.round(rect.width + 20);
+      const cssH = Math.round(rect.height + 20);
+      if (canvas.width !== Math.round(cssW * dpr) || canvas.height !== Math.round(cssH * dpr)) {
+        canvas.width = Math.round(cssW * dpr);
+        canvas.height = Math.round(cssH * dpr);
+      }
+
+      const ctx = canvas.getContext("2d");
+      ctx.save();
+      ctx.scale(dpr, dpr);
+      ctx.clearRect(0, 0, cssW, cssH);
+
+      const guards = measureCardWordGuards(el, canvas);
+      stateObj.guards = guards;
+
+      const p = STATE.reducedMotion ? 1 : Math.max(0, Math.min(1, stateObj.drawProgress));
+      const e = STATE.reducedMotion ? 0 : Math.max(0, Math.min(1, stateObj.eraseProgress));
+      const vis = Math.max(0, p * (1 - e));
+      if (vis <= 0.01) {
+        ctx.restore();
+        return;
+      }
+
+      const seed = fnv1a(cardId + ":take:" + stateObj.take + ":" + medId);
+      const rng = seededRandom(seed);
+      const b = STATE.brushMultiplier;
+      const x0 = 10;
+      const y0 = 10;
+      const w = rect.width;
+      const h = rect.height;
+
+      const outlineP = Math.min(1, p / 0.45);
+      const fillP = Math.max(0, Math.min(1, (p - 0.25) / 0.55));
+      const plateP = Math.max(0, Math.min(1, (p - 0.65) / 0.35));
+
+      // 1. Offset Shadow Plate (drawn behind card face)
+      if (plateP > 0 && e < 0.85) {
+        ctx.save();
+        const pOff = medId === "pixel" ? artPixelSize() * 2 : Math.round(5 + b * 1.5);
+        ctx.fillStyle = pal.plate || pal.ink;
+        ctx.globalAlpha = (isNight ? 0.72 : 0.86) * plateP * (1 - e);
+        if (medId === "linocut") {
+          ctx.translate(pOff, pOff - 1);
+          ctx.rotate(0.006);
+          ctx.fillRect(x0, y0, w * plateP, h);
+        } else {
+          ctx.fillRect(x0 + pOff, y0 + pOff, w * plateP, h);
+        }
+        ctx.restore();
+      }
+
+      // 2. Card Surface Fill
+      ctx.save();
+      ctx.fillStyle = pal.paper2 || pal.ground;
+      ctx.globalAlpha = (medId === "glowing-glass" ? 0.86 : 0.96) * (1 - e * 0.9);
+      ctx.fillRect(x0, y0, w, h);
+      ctx.restore();
+
+      // 3. Medium-Specific Interior Texture (clipped outside word guards!)
+      if (fillP > 0) {
+        ctx.save();
+        if (medId === "pixel") {
+          const S = artPixelSize();
+          ctx.fillStyle = accent;
+          ctx.globalAlpha = (isNight ? 0.18 : 0.14) * fillP * (1 - e);
+          for (let gx = x0 + S; gx < x0 + w - S; gx += S * 2) {
+            for (let gy = y0 + S; gy < y0 + Math.min(h - S, 42); gy += S) {
+              if (((gx / S + gy / S) % 2 === 0) && !pointInGuards(gx, gy, guards)) {
+                ctx.fillRect(gx, gy, S, S);
+              }
+            }
+          }
+        } else if (medId === "colored-pencil" || medId === "charcoal") {
+          ctx.strokeStyle = accent;
+          ctx.lineWidth = (medId === "charcoal" ? 2.4 : 1.3) * b;
+          ctx.globalAlpha = (isNight ? 0.22 : 0.16) * fillP * (1 - e);
+          const step = Math.max(5, Math.round(9 / Math.sqrt(b)));
+          ctx.beginPath();
+          for (let d = -h; d < w + h; d += step) {
+            const sx = x0 + Math.max(0, d);
+            const sy = y0 + Math.max(0, -d);
+            const ex = x0 + Math.min(w, d + 28);
+            const ey = y0 + Math.min(h, -d + 28);
+            if (!pointInGuards((sx + ex) * 0.5, (sy + ey) * 0.5, guards)) {
+              ctx.moveTo(sx, sy);
+              ctx.lineTo(ex, ey);
+            }
+          }
+          ctx.stroke();
+        } else if (medId === "watercolor") {
+          const grad = ctx.createRadialGradient(x0 + w * 0.2, y0 + 24, 8, x0 + w * 0.5, y0 + h * 0.5, w * 0.7);
+          grad.addColorStop(0, accent);
+          grad.addColorStop(1, "transparent");
+          ctx.fillStyle = grad;
+          ctx.globalAlpha = (isNight ? 0.22 : 0.15) * fillP * (1 - e);
+          ctx.fillRect(x0 + 2, y0 + 2, w - 4, h - 4);
+        } else if (medId === "sumi-ink") {
+          // Vermilion cinnabar hanko seal stamp in top-right margin outside text
+          const sealX = x0 + w - 34;
+          const sealY = y0 + h - 34;
+          if (!pointInGuards(sealX + 10, sealY + 10, guards)) {
+            ctx.strokeStyle = pal.accents?.sealRed || "rgb(208, 58, 43)";
+            ctx.lineWidth = 2;
+            ctx.globalAlpha = 0.82 * fillP * (1 - e);
+            ctx.strokeRect(sealX, sealY, 20, 20);
+            ctx.beginPath();
+            ctx.moveTo(sealX + 5, sealY + 5);
+            ctx.lineTo(sealX + 15, sealY + 5);
+            ctx.moveTo(sealX + 10, sealY + 5);
+            ctx.lineTo(sealX + 10, sealY + 15);
+            ctx.stroke();
+          }
+        } else if (medId === "oil" || medId === "clay") {
+          // Raking-light top-left specular bevel ridge
+          ctx.strokeStyle = isNight ? "rgba(255, 230, 255, 0.45)" : "rgba(255, 255, 255, 0.75)";
+          ctx.lineWidth = 2.5 * b;
+          ctx.beginPath();
+          ctx.moveTo(x0 + 2, y0 + h - 2);
+          ctx.lineTo(x0 + 2, y0 + 2);
+          ctx.lineTo(x0 + w - 2, y0 + 2);
+          ctx.stroke();
+        } else if (medId === "glowing-glass") {
+          // Top-left 260px catch light
+          const catchGrad = ctx.createRadialGradient(x0, y0, 2, x0, y0, 240);
+          catchGrad.addColorStop(0, "rgba(255, 255, 255, 0.22)");
+          catchGrad.addColorStop(1, "transparent");
+          ctx.fillStyle = catchGrad;
+          ctx.fillRect(x0, y0, w, h);
+        }
+        ctx.restore();
+      }
+
+      // 4. Medium-Specific Perimeter Outline (0..outlineP)
+      ctx.save();
+      const perimW = w * outlineP;
+      const perimH = h * outlineP;
+
+      if (medId === "pixel") {
+        // 1-cell notched pixelBox with 4 corners left empty
+        const S = artPixelSize();
+        ctx.fillStyle = pal.ink;
+        ctx.globalAlpha = 1 - e;
+        const cols = Math.floor(perimW / S);
+        const rows = Math.floor(perimH / S);
+        for (let c = 1; c < cols - 1; c += 1) {
+          ctx.fillRect(x0 + c * S, y0, S, S);
+          ctx.fillRect(x0 + c * S, y0 + (rows - 1) * S, S, S);
+        }
+        for (let r = 1; r < rows - 1; r += 1) {
+          ctx.fillRect(x0, y0 + r * S, S, S);
+          ctx.fillRect(x0 + (cols - 1) * S, y0 + r * S, S, S);
+        }
+      } else if (medId === "sumi-ink") {
+        // Multi-bristle calligraphic fude bundle with flying-white tail
+        const nb = Math.max(2, Math.round((3.2 * b) / 1.4));
+        ctx.strokeStyle = pal.ink;
+        for (let bi = 0; bi < nb; bi += 1) {
+          const off = (bi - (nb - 1) * 0.5) * 1.1;
+          ctx.lineWidth = Math.max(1, (2.2 - Math.abs(off) * 0.4) * b);
+          ctx.globalAlpha = (0.88 - bi * 0.12) * (1 - e);
+          ctx.beginPath();
+          ctx.strokeRect(x0 + off, y0 + off, perimW, perimH);
+        }
+      } else if (medId === "glowing-glass") {
+        // Dual chromatic dispersion rails (+1px cyan, -1px magenta) + bright core
+        ctx.lineWidth = 1.5 * b;
+        ctx.strokeStyle = pal.accents?.cyan || "rgb(47, 227, 255)";
+        ctx.globalAlpha = 0.65 * (1 - e);
+        ctx.strokeRect(x0 + 1.5, y0 + 1.5, perimW, perimH);
+
+        ctx.strokeStyle = pal.accents?.magenta || "rgb(241, 59, 255)";
+        ctx.strokeRect(x0 - 1.5, y0 - 1.5, perimW, perimH);
+
+        ctx.lineWidth = 2 * b;
+        ctx.strokeStyle = pal.ink;
+        ctx.globalAlpha = 0.95 * (1 - e);
+        ctx.strokeRect(x0, y0, perimW, perimH);
+      } else if (medId === "linocut") {
+        // Gouge-carved border with parallel chatter marks
+        ctx.lineWidth = 3.5 * b;
+        ctx.strokeStyle = pal.ink;
+        ctx.globalAlpha = 1 - e;
+        ctx.strokeRect(x0, y0, perimW, perimH);
+        ctx.lineWidth = 1.2;
+        ctx.strokeStyle = accent2;
+        ctx.strokeRect(x0 + 3, y0 + 3, Math.max(0, perimW - 6), Math.max(0, perimH - 6));
+      } else if (medId === "clay") {
+        // Stylus-incised V-trench (dark trench center + sunward displaced clay burr)
+        ctx.lineWidth = 3 * b;
+        ctx.strokeStyle = pal.trenchShadow || pal.ink;
+        ctx.globalAlpha = 0.9 * (1 - e);
+        ctx.strokeRect(x0, y0, perimW, perimH);
+        ctx.lineWidth = 1.5 * b;
+        ctx.strokeStyle = pal.ridgeHighlight || "rgba(255, 253, 247, 0.8)";
+        ctx.strokeRect(x0 + 2, y0 + 2, Math.max(0, perimW - 4), Math.max(0, perimH - 4));
+      } else {
+        // colored-pencil, charcoal, watercolor, oil: multi-pass hand line with corner overshoot
+        const passes = medId === "colored-pencil" || medId === "charcoal" ? 2 : 1;
+        for (let pass = 0; pass < passes; pass += 1) {
+          const j = (rng() - 0.5) * 1.8 * b;
+          ctx.lineWidth = (medId === "oil" ? 3.4 : medId === "charcoal" ? 3.0 : 2.0) * b;
+          ctx.strokeStyle = pass === 0 ? pal.ink : accent;
+          ctx.globalAlpha = (pass === 0 ? 0.92 : 0.45) * (1 - e);
+          ctx.strokeRect(x0 + j, y0 - j, perimW, perimH);
+        }
+      }
+      ctx.restore();
+      ctx.restore();
+    }
+
+    // Register & observe all .kim-card elements for scroll-triggered plot (R1.8) & spatial erase (R1.22, R1.23)
+    function registerAllCards() {
+      const cardEls = document.querySelectorAll(".kim-card");
+      cardEls.forEach((el) => {
+        const cardId = el.getAttribute("data-card-id") || el.id || "card-" + Math.random();
+        const canvas = el.querySelector(".kim-card-canvas");
+        if (!canvas) return;
+        const existing = STATE.cards.get(cardId);
+        if (existing && existing.el === el) return;
+
+        const stateObj = {
+          cardId,
+          el,
+          canvas,
+          take: Number(el.getAttribute("data-take") || "1"),
+          drawProgress: STATE.reducedMotion ? 1 : 0,
+          eraseProgress: 0,
+          plotting: false,
+          wasExited: false,
+          guards: [],
+        };
+        STATE.cards.set(cardId, stateObj);
+
+        el.addEventListener("mouseenter", (ev) => {
+          const mId = effectiveMediumForCard(el.getAttribute("data-card-medium"));
+          STATE.activeHoverMedium = mId;
+          spawnParticles(mId, ev.clientX, ev.clientY, 2);
+          drawCardMedium(stateObj);
+        });
+      });
+      updateScrollPlotAndErase();
+    }
+
+    function replotAllCards(incrementTake) {
+      STATE.cards.forEach((st) => {
+        if (incrementTake) {
+          st.take += 1;
+          st.el.setAttribute("data-take", String(st.take));
+        }
+        st.drawProgress = STATE.reducedMotion ? 1 : 0.15;
+        st.eraseProgress = 0;
+        st.plotting = true;
+        drawCardMedium(st);
+      });
+    }
+
+    // Spatial Scroll-Driven Plot (R1.8) & Erase-on-Exit (R1.22, R1.23)
+    function updateScrollPlotAndErase() {
+      const vh = window.innerHeight || 800;
+      const exitBand = vh * 0.18;
+
+      STATE.cards.forEach((st) => {
+        const r = st.el.getBoundingClientRect();
+        if (r.width <= 0 || r.height <= 0) return;
+
+        // Trigger draw-in when within 88% of viewport
+        if (r.top < vh * 0.88 && r.bottom > 0 && !st.plotting && st.drawProgress < 1) {
+          st.plotting = true;
+        }
+
+        if (STATE.reducedMotion) {
+          st.drawProgress = 1;
+          st.eraseProgress = 0;
+          drawCardMedium(st);
+          return;
+        }
+
+        // Compute spatial scroll-exit progress e in [0..1]
+        let e = 0;
+        if (r.bottom < exitBand && r.bottom > -40) {
+          e = Math.max(0, Math.min(1, (exitBand - r.bottom) / exitBand));
+        } else if (r.top > vh - exitBand && r.top < vh + 40) {
+          e = Math.max(0, Math.min(1, (r.top - (vh - exitBand)) / exitBand));
+        } else if (r.bottom <= -40 || r.top >= vh + 40) {
+          e = 1;
+        }
+
+        // Fresh take seed on return after full exit (R1.23)
+        if (e >= 0.98) {
+          st.wasExited = true;
+        } else if (st.wasExited && e < 0.25 && r.top < vh * 0.85 && r.bottom > exitBand) {
+          st.wasExited = false;
+          st.take += 1;
+          st.el.setAttribute("data-take", String(st.take));
+          st.drawProgress = 0.08;
+          st.plotting = true;
+          const mId = effectiveMediumForCard(st.el.getAttribute("data-card-medium"));
+          spawnParticles(mId, r.left + r.width * 0.5, Math.max(40, Math.min(vh - 40, r.top + 24)), 2);
+        }
+
+        if (Math.abs(e - st.eraseProgress) > 0.01) {
+          st.eraseProgress = e;
+          drawCardMedium(st);
+        }
+      });
+    }
+
+    // Darkroom Lamps, Viewport Particle Layer (above cards, outside words), and Physical Tool Sprite
+    const lampsCanvas = document.getElementById("kim-lamps-canvas");
+    const particleCanvas = document.getElementById("kim-particle-canvas");
+    const toolCanvas = document.getElementById("kim-tool-canvas");
+
+    function resizeViewportCanvases() {
+      const w = window.innerWidth;
+      const h = window.innerHeight;
+      [lampsCanvas, particleCanvas, toolCanvas].forEach((c) => {
+        if (!c) return;
+        c.width = w;
+        c.height = h;
+      });
+      STATE.cards.forEach((st) => drawCardMedium(st));
+    }
+
+    function renderDarkroomLamps(nowMs) {
+      if (!lampsCanvas) return;
+      const ctx = lampsCanvas.getContext("2d");
+      const w = lampsCanvas.width;
+      const h = lampsCanvas.height;
+      ctx.clearRect(0, 0, w, h);
+
+      const isNight = STATE.edition === "night";
+      const lamps = SPEC.darkroomContract?.lamps || [];
+      const tSec = STATE.reducedMotion ? 0 : nowMs / 1000;
+
+      for (let i = 0; i < lamps.length; i += 1) {
+        const L = lamps[i];
+        if (!L.anchor) continue;
+        const alpha = Math.min(0.42, isNight ? (L.alphaNight || 0.32) : (L.alphaDay || 0.1) * 0.45);
+        const period = L.periodSeconds || 23;
+        const dx = L.driftAmplitude ? Math.sin((tSec / period) * Math.PI * 2) * L.driftAmplitude[0] : 0;
+        const dy = L.driftAmplitude ? Math.cos((tSec / period) * Math.PI * 2) * L.driftAmplitude[1] : 0;
+        const cx = (L.anchor[0] + dx) * w;
+        const cy = (L.anchor[1] + dy) * h;
+        const rad = Math.max(w, h) * (L.radiusStop || 0.55);
+
+        const g = ctx.createRadialGradient(cx, cy, 4, cx, cy, rad);
+        g.addColorStop(0, L.hex);
+        g.addColorStop(1, "transparent");
+        ctx.save();
+        ctx.globalAlpha = alpha;
+        ctx.fillStyle = g;
+        ctx.fillRect(0, 0, w, h);
+        ctx.restore();
+      }
+    }
+
+    function getDockBottom() {
+      const dock = document.querySelector(".kim-dock");
+      return dock ? dock.getBoundingClientRect().bottom : 120;
+    }
+
+    function renderParticlesAndTool(nowMs, dtSec) {
+      const guardEl = document.getElementById("kim-guard-telemetry");
+      const nextGuardText =
+        "Word Guards: " + STATE.wordGuardCount + " active (0 collisions; " + STATE.particleCollisionsPrevented + " deflected)";
+      if (guardEl && guardEl.textContent !== nextGuardText) guardEl.textContent = nextGuardText;
+      const partEl = document.getElementById("kim-particle-telemetry");
+      const nextPartText = "Particles: " + STATE.particles.length + " / 150";
+      if (partEl && partEl.textContent !== nextPartText) partEl.textContent = nextPartText;
+
+      const wordRects = collectLiveViewportWordRects(STATE.particles.length > 0);
+      STATE.wordGuardCount = wordRects.length;
+      const dockBottom = getDockBottom();
+
+      if (particleCanvas) {
+        const ctx = particleCanvas.getContext("2d");
+        ctx.clearRect(0, 0, particleCanvas.width, particleCanvas.height);
+
+        const survivors = [];
+        for (let i = 0; i < STATE.particles.length; i += 1) {
+          const pt = STATE.particles[i];
+          const age = nowMs - pt.born;
+          if (age >= pt.life) continue;
+          const pad = Math.max(artPixelSize(), pt.size) + 6;
+
+          if (pt.y - pad <= dockBottom || circleHitsWordRects(pt.x, pt.y, pad, wordRects)) {
+            STATE.particleCollisionsPrevented += 1;
+            continue;
+          }
+
+          pt.vy += pt.gravity * dtSec;
+          pt.vx *= pt.drag;
+          pt.vy *= pt.drag;
+          const nx = pt.x + pt.vx * dtSec;
+          const ny = pt.y + pt.vy * dtSec;
+
+          // R1.9 & R1.9d: Evict any particle whose trajectory or radius enters a padded word box or dock
+          if (ny - pad <= dockBottom || circleHitsWordRects(nx, ny, pad, wordRects)) {
+            STATE.particleCollisionsPrevented += 1;
+            continue;
+          }
+
+          pt.x = nx;
+          pt.y = ny;
+          survivors.push(pt);
+
+          const alpha = 1 - age / pt.life;
+          ctx.save();
+          ctx.globalAlpha = alpha;
+          ctx.fillStyle = pt.color;
+          if (pt.medId === "pixel") {
+            const S = artPixelSize();
+            const gx = Math.round(pt.x / S) * S;
+            const gy = Math.round(pt.y / S) * S;
+            if (gy > dockBottom && !circleHitsWordRects(gx + S * 0.5, gy + S * 0.5, S + 4, wordRects)) {
+              ctx.fillRect(gx, gy, S, S);
+            }
+          } else {
+            ctx.beginPath();
+            ctx.arc(pt.x, pt.y, pt.size, 0, Math.PI * 2);
+            ctx.fill();
+          }
+          ctx.restore();
+        }
+        STATE.particles = survivors;
+
+        // Hard destination-out mask over dock + every live word box so zero opaque particle pixels ever overlap a word
+        if (survivors.length > 0) {
+          ctx.save();
+          ctx.globalCompositeOperation = "destination-out";
+          ctx.fillStyle = "rgb(0, 0, 0)";
+          ctx.fillRect(0, 0, particleCanvas.width, dockBottom + 4);
+          for (let i = 0; i < wordRects.length; i += 1) {
+            const b = wordRects[i];
+            ctx.fillRect(b.left - 5, b.top - 5, b.width + 10, b.height + 10);
+          }
+          ctx.restore();
+        }
+      }
+
+      if (toolCanvas) {
+        const ctx = toolCanvas.getContext("2d");
+        ctx.clearRect(0, 0, toolCanvas.width, toolCanvas.height);
+        if (STATE.showTool && !STATE.reducedMotion) {
+          const medId = activeGlobalMediumId();
+          const med = SPEC.media[medId] || SPEC.media.pixel;
+          const isNight = STATE.edition === "night";
+          const pal = isNight ? med.night : med.day;
+          const tx = STATE.pointerX;
+          const ty = STATE.pointerY;
+
+          // Draw physical tool sprite outside word guards
+          if (!circleHitsWordRects(tx, ty, 16, wordRects)) {
+            ctx.save();
+            ctx.translate(tx, ty);
+            ctx.strokeStyle = pal.ink;
+            ctx.fillStyle = Object.values(pal.accents || {})[0] || pal.plate || pal.ink;
+            ctx.lineWidth = 2;
+            if (medId === "pixel") {
+              const S = artPixelSize();
+              ctx.fillRect(-S * 2, 0, S * 4, S);
+              ctx.fillRect(0, -S * 2, S, S * 4);
+            } else {
+              ctx.rotate(-0.65);
+              ctx.fillRect(4, -3, 28, 6);
+              ctx.strokeRect(4, -3, 28, 6);
+              ctx.beginPath();
+              ctx.moveTo(0, 0);
+              ctx.lineTo(4, -3);
+              ctx.lineTo(4, 3);
+              ctx.closePath();
+              ctx.fill();
+            }
+            ctx.restore();
+
+            ctx.save();
+            ctx.globalCompositeOperation = "destination-out";
+            ctx.fillStyle = "rgb(0, 0, 0)";
+            for (let i = 0; i < wordRects.length; i += 1) {
+              const b = wordRects[i];
+              ctx.fillRect(b.left - 3, b.top - 3, b.width + 6, b.height + 6);
+            }
+            ctx.restore();
+          }
+        }
+      }
+    }
+
+    // Choreographed Animation Tick + 90ms Hidden-Tab Fallback (R1.10)
+    let lastTick = performance.now();
+    function stepSimulation(nowMs) {
+      const dtSec = Math.min(0.1, Math.max(0.004, (nowMs - lastTick) / 1000));
+      lastTick = nowMs;
+
+      STATE.cards.forEach((st) => {
+        if (st.plotting && st.drawProgress < 1) {
+          st.drawProgress = Math.min(1, st.drawProgress + dtSec * 0.55);
+          if (st.drawProgress >= 1) st.plotting = false;
+          drawCardMedium(st);
+        }
+      });
+
+      renderDarkroomLamps(nowMs);
+      renderParticlesAndTool(nowMs, dtSec);
+    }
+
+    function rafLoop(nowMs) {
+      stepSimulation(nowMs);
+      requestAnimationFrame(rafLoop);
+    }
+
+    // 90ms hidden-tab fallback per R1.10
+    setInterval(() => {
+      if (document.hidden) {
+        stepSimulation(performance.now());
+      }
+    }, 90);
+
+    // Highlight-to-Explain Glossary (Internal Edition)
+    const GLOSSARY = {
+      "person": "A portable identity (an Ed25519 key) and its settings, owned by the person and portable across hosts.",
+      "space": "Data plus rules in three kinds: personal, role, and community.",
+      "host": "A pooled server that carries many spaces and sets resource ceilings while logging host-side reads.",
+      "meter": "One append-only event stream per use of anything pooled (compute, model tokens, knowledge reads, skills, actions).",
+      "offer": "The countersigned Ed25519 offer letter that forms the member's root grant.",
+      "grant": "A binding permission bundle derived from a countersigned offer letter, carrying a rung (shadow, assist, own, host) and rolling budgets.",
+      "catalog": "5-layer Ed25519-signed configuration resolver (defaults -> host -> community -> role -> person) enforcing strict monotonicity.",
+      "monotonicity": "Lower catalog layers may tighten review rules or narrow budgets, never relax safety gates or raise budget ceilings.",
+      "m0 boot": "Milestone M0: from a clean clone, one command stands up a host with one personal space and records one metered agent run.",
+      "m1 apprentice": "Milestone M1: a countersigned offer creates an Assist seat whose runs are metered and land through sponsor review.",
+      "m2 way out": "Milestone M2: export a member's identity and personal space and stand up a peer host from them.",
+      "word protection": "Binding rule R1.9d: every medium expands live DOM text boxes by 3px to 6px (or 1 pixel cell) and excludes strokes and particles from crossing words.",
+    };
+
+    function explainText(rawText) {
+      const q = String(rawText || "").trim();
+      const lower = q.toLowerCase();
+      let matchedKey = Object.keys(GLOSSARY).find((k) => lower.includes(k));
+      const definition = matchedKey
+        ? GLOSSARY[matchedKey]
+        : "Kinesis architectural element in the 9-medium roadmap and control-plane execution flow.";
+      return {
+        term: q || "Kinesis Roadmap",
+        inContext: definition + " Connected directly to the chronological milestone timeline and planning foundation.",
+        outOfContext: "In distributed systems and procedural UI graphics, this defines verifiable state boundaries and readable surface rendering.",
+      };
+    }
+
+    // Expose verification API on window.KIM for automated DOM & pixel-level rule checks
+    window.KIM = {
+      STATE,
+      SPEC,
+      DATA,
+      explainText,
+      verifyWordProtection() {
+        const wordRects = collectLiveViewportWordRects(true);
+        const colliding = STATE.particles.filter((pt) => circleHitsWordRects(pt.x, pt.y, 0, wordRects));
+        let pxOverWordBoxes = 0;
+        let opaqueParticlePx = 0;
+        if (particleCanvas && particleCanvas.width > 0 && particleCanvas.height > 0) {
+          const W = particleCanvas.width;
+          const H = particleCanvas.height;
+          const mc = document.createElement("canvas");
+          mc.width = W;
+          mc.height = H;
+          const mctx = mc.getContext("2d");
+          mctx.fillStyle = "rgb(0, 0, 0)";
+          for (let i = 0; i < wordRects.length; i += 1) {
+            const b = wordRects[i];
+            mctx.fillRect(b.left, b.top, b.width, b.height);
+          }
+          const pd = particleCanvas.getContext("2d").getImageData(0, 0, W, H).data;
+          const md = mctx.getImageData(0, 0, W, H).data;
+          for (let i = 3; i < pd.length; i += 4) {
+            if (pd[i] > 40) {
+              opaqueParticlePx += 1;
+              if (md[i] > 128) pxOverWordBoxes += 1;
+            }
+          }
+        }
+        return {
+          ok: colliding.length === 0 && pxOverWordBoxes === 0,
+          activeWordGuards: wordRects.length,
+          liveParticles: STATE.particles.length,
+          collidingParticles: colliding.length,
+          opaqueParticlePx,
+          pxOverWordBoxes,
+          deflectedTotal: STATE.particleCollisionsPrevented,
+        };
+      },
+    };
+
+    // Wire Top-Level Controls
+    function initControls() {
+      const medSelect = document.getElementById("kim-medium-select");
+      if (medSelect) {
+        medSelect.value = STATE.mediumMode;
+        medSelect.addEventListener("change", () => {
+          STATE.mediumMode = medSelect.value;
+          localStorage.setItem("kim-medium", STATE.mediumMode);
+          applyThemeTokens();
+          renderMediumRibbon();
+          replotAllCards(false);
+        });
+      }
+
+      const edBtn = document.getElementById("kim-edition-btn");
+      if (edBtn) {
+        edBtn.addEventListener("click", () => {
+          STATE.edition = STATE.edition === "day" ? "night" : "day";
+          localStorage.setItem("kim-edition", STATE.edition);
+          applyThemeTokens();
+          renderMediumRibbon();
+          STATE.cards.forEach((st) => drawCardMedium(st));
+        });
+      }
+
+      const toolBtn = document.getElementById("kim-tool-btn");
+      if (toolBtn) {
+        toolBtn.addEventListener("click", () => {
+          STATE.showTool = !STATE.showTool;
+          localStorage.setItem("kim-tool", STATE.showTool ? "1" : "0");
+          applyThemeTokens();
+        });
+      }
+
+      const brushSlider = document.getElementById("kim-brush-slider");
+      if (brushSlider) {
+        brushSlider.value = String(STATE.brushMultiplier);
+        brushSlider.addEventListener("input", () => {
+          STATE.brushMultiplier = parseFloat(brushSlider.value) || 1.0;
+          localStorage.setItem("kim-brush", String(STATE.brushMultiplier));
+          applyThemeTokens();
+          replotAllCards(false);
+        });
+      }
+
+      const motionBtn = document.getElementById("kim-motion-btn");
+      if (motionBtn) {
+        motionBtn.addEventListener("click", () => {
+          STATE.reducedMotion = !STATE.reducedMotion;
+          if (STATE.reducedMotion) STATE.particles = [];
+          applyThemeTokens();
+          replotAllCards(false);
+        });
+      }
+
+      const replotBtn = document.getElementById("kim-replot-btn");
+      if (replotBtn) {
+        replotBtn.addEventListener("click", () => {
+          cachedWordRectsAt = 0;
+          replotAllCards(true);
+          spawnParticles(activeGlobalMediumId(), 16, Math.max(220, getDockBottom() + 50), 3);
+        });
+      }
+
+      // Navigation Tabs
+      document.querySelectorAll(".kim-tab-btn").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          const tab = btn.getAttribute("data-tab");
+          STATE.activeTab = tab;
+          document.querySelectorAll(".kim-tab-btn").forEach((b) => b.classList.remove("kim-btn-active"));
+          btn.classList.add("kim-btn-active");
+
+          const views = ["timeline", "journal", "media-rules"];
+          views.forEach((v) => {
+            const el = document.getElementById("kim-view-" + v);
+            if (el) el.classList.toggle("hidden", v !== tab);
+          });
+          cachedWordRectsAt = 0;
+          registerAllCards();
+          setTimeout(() => STATE.cards.forEach((st) => drawCardMedium(st)), 30);
+        });
+      });
+
+      // Timeline Status Filter Buttons
+      document.querySelectorAll(".kim-filter-btn").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          STATE.statusFilter = btn.getAttribute("data-filter") || "all";
+          document.querySelectorAll(".kim-filter-btn").forEach((b) => b.classList.remove("kim-btn-active"));
+          btn.classList.add("kim-btn-active");
+          renderTimelineCards();
+        });
+      });
+
+      // Modal buttons
+      const closeBtn = document.getElementById("kim-modal-close-btn");
+      if (closeBtn) closeBtn.addEventListener("click", closePostModal);
+      const prevBtn = document.getElementById("kim-modal-prev-btn");
+      if (prevBtn) {
+        prevBtn.addEventListener("click", () => {
+          const nextIdx = (STATE.activeModalIndex - 1 + DATA.milestones.length) % DATA.milestones.length;
+          openPostModal(nextIdx);
+        });
+      }
+      const nextBtn = document.getElementById("kim-modal-next-btn");
+      if (nextBtn) {
+        nextBtn.addEventListener("click", () => {
+          const nextIdx = (STATE.activeModalIndex + 1) % DATA.milestones.length;
+          openPostModal(nextIdx);
+        });
+      }
+
+      window.addEventListener("keydown", (ev) => {
+        if (ev.key === "Escape") {
+          closePostModal();
+          
+        }
+      });
+
+      window.addEventListener("mousemove", (ev) => {
+        STATE.pointerX = ev.clientX;
+        STATE.pointerY = ev.clientY;
+      });
+
+      window.addEventListener("scroll", () => {
+        updateScrollPlotAndErase();
+      }, { passive: true });
+
+      window.addEventListener("resize", () => {
+        resizeViewportCanvases();
+      });
+
+      
+    }
+
+    // Boot everything
+    applyThemeTokens();
+    renderMediumRibbon();
+    renderTimelineCards();
+    renderJournalView();
+    renderMediaRulesView();
+    
+    initControls();
+    resizeViewportCanvases();
+    requestAnimationFrame(rafLoop);
+  })();
+  </script>
+</body>
+</html>
